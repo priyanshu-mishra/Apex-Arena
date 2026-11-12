@@ -718,8 +718,17 @@ class DeterministicKernel {
       if (this.swapNonce % 2 === 0) this.blockNumber += 1;
 
       const hashPrefix = "0x" + fnv256Hex([this.seed, this.tick, this.swapNonce]).slice(0, 4);
-      if (diffBps < -8 || this.regimeCode === 3) {
-        const ethInPips = this.randRange(350, 1450) * (SCALE / 100);
+      // Convergence arbitrageur: trade a noisy fraction of the size that would
+      // re-peg the x*y=k pool to the CLOB (flash crash: slight sell pressure).
+      const targetPips = this.regimeCode === 3 ? Math.floor(this.clobMidPips * 0.996) : this.clobMidPips;
+      const xEth = this.reserveBasePips / SCALE;
+      const kUnits = xEth * (this.reserveQuotePips / SCALE);
+      const xTargetEth = Math.sqrt(kUnits / Math.max(1, targetPips / SCALE));
+      const closeFrac = this.randRange(25, 45) / 100;
+      let tradeEth = (xTargetEth - xEth) * closeFrac;
+      if (Math.abs(tradeEth) < 0.4) tradeEth = (this.randRange(0, 1) === 0 ? -1 : 1) * this.randRange(40, 160) / 100;
+      if (tradeEth > 0) {
+        const ethInPips = Math.round(Math.min(tradeEth, 120) * SCALE);
         const feeNet = Math.floor(ethInPips * 9970 / 10000);
         const usdtOutPips = Math.floor((this.reserveQuotePips * feeNet) / (this.reserveBasePips + feeNet));
         this.reserveBasePips += ethInPips;
@@ -733,7 +742,7 @@ class DeterministicKernel {
           "[BLK #" + this.blockNumber + "] " + hashPrefix + ".. SWAP " + formatQtyPips(ethInPips) + " ETH->" + formatQtyPips(usdtOutPips) + " USDT"
         );
       } else {
-        const usdtInPips = this.randRange(4500, 18000) * SCALE;
+        const usdtInPips = Math.round(Math.min(-tradeEth, 120) * (evmSpot / SCALE) * SCALE);
         const feeNet = Math.floor(usdtInPips * 9970 / 10000);
         const ethOutPips = Math.floor((this.reserveBasePips * feeNet) / (this.reserveQuotePips + feeNet));
         this.reserveQuotePips += usdtInPips;
