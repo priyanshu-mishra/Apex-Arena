@@ -96,7 +96,7 @@ export function AppShell() {
           </nav>
 
           <div className="topbar-tools">
-            <span className="row num" style={{ ["--gap" as string]: "6px", fontSize: 13 }} title="Live CLOB mid price">
+            <span className="row num eth-price" style={{ ["--gap" as string]: "6px", fontSize: 13 }} title="Live CLOB mid price">
               <span className="text-3" style={{ fontFamily: "var(--font-sans)" }}>
                 ETH
               </span>
@@ -120,7 +120,7 @@ export function AppShell() {
               onClick={() => setPaletteOpen(true)}
               aria-label="Open command palette"
             >
-              Commands <Kbd>⌘K</Kbd>
+              <span className="cmd-label">Commands</span> <Kbd>⌘K</Kbd>
             </button>
           </div>
         </div>
@@ -132,7 +132,7 @@ export function AppShell() {
           <p className="narrative-text grow">
             <strong>{narrative.headline}.</strong> {narrative.detail}
           </p>
-          <span className="caption num" style={{ whiteSpace: "nowrap" }}>
+          <span className="caption num narrative-tick" style={{ whiteSpace: "nowrap" }}>
             tick {frame.tick.toLocaleString()} · block #{frame.blockNumber.toLocaleString()}
           </span>
         </div>

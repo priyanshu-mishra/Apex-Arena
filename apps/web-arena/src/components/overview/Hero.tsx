@@ -20,7 +20,7 @@ export function Hero({ onStartTour }: { onStartTour: () => void }) {
         <p className={styles.heroLead}>
           ApexArena runs an order book and an on-chain AMM side by side, lets a chaos engine push them through calm
           days, droughts and flash crashes, and scores every agent on how it survives, not on how lucky it got.{" "}
-          <strong>Every run is deterministic</strong>: the same seed produces the same SHA-256 state hash, so a
+          <strong>Every run is deterministic</strong>: in the Rust engine the same seed produces the same SHA-256 state hash, so a
           result can be replayed and audited.
         </p>
         <div className={styles.ctaRow}>

@@ -209,10 +209,9 @@
 
 .traceCard {
   position: relative;
-  border: 1px solid var(--border);
-  border-left: 3px solid var(--llm);
+  border: 1px solid rgba(168, 85, 247, 0.28);
   border-radius: var(--r-md);
-  background: var(--surface-2);
+  background: linear-gradient(180deg, rgba(168, 85, 247, 0.06), transparent 120px), var(--surface-2);
   padding: 14px 16px;
   display: flex;
   flex-direction: column;

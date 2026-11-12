@@ -28,3 +28,4 @@ apps/web-arena/build/
 # Local tooling
 graphify-out/
 .remember/
+apps/web-arena/.next-build/

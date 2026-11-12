@@ -15,7 +15,7 @@ const WORKSPACE_COPY: Record<ViewId, string> = {
   lab: "Configure and deploy your own agent, then watch its reasoning, fills and score next to Gemini, DeepSeek and the quant bots.",
   bench:
     "Run every agent through calm, toxic-flow, whale-shock and flash-crash stages on a fixed seed and compare their ACS.",
-  arch: "How the Rust engine is built, and proof that it is deterministic: run the 5-run SHA-256 check in your browser.",
+  arch: "How the Rust engine is built, and proof that it is deterministic: trigger the native Rust 5-run SHA-256 check from your browser.",
 };
 
 const STACK: { name: string; detail: string; path: string }[] = [

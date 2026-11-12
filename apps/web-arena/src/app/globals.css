@@ -388,7 +388,7 @@ a:hover {
   background: var(--surface-2);
   color: var(--text-3);
   font-family: var(--font-mono);
-  font-size: 11px;
+  font-size: 12px;
   line-height: 1;
 }
 
@@ -472,7 +472,7 @@ a:hover {
   height: 22px;
   padding: 0 8px;
   border-radius: var(--r-pill);
-  font-size: 11.5px;
+  font-size: 12px;
   font-weight: 600;
   white-space: nowrap;
   background: var(--surface-2);
@@ -690,7 +690,7 @@ a:hover {
   border: 1px dashed rgba(148, 163, 184, 0.4);
   background: transparent;
   color: var(--text-2);
-  font-size: 11.5px;
+  font-size: 12px;
   font-weight: 600;
   cursor: help;
   white-space: nowrap;
@@ -970,6 +970,16 @@ a:hover {
   font-size: var(--fs-sm);
 }
 
+@media (max-width: 900px) {
+  /* Nav drops to its own full-width scrollable row so all five workspaces stay reachable */
+  .topbar-inner { flex-wrap: wrap; height: auto; padding-top: 10px; padding-bottom: 6px; row-gap: 6px; }
+  .nav-tabs { order: 3; width: 100%; }
+  .nav-tab .kbd { display: none; }
+  .narrative-tick { display: none; }
+}
+@media (max-width: 560px) {
+  .topbar-tools .eth-price, .topbar-tools .cmd-label { display: none; }
+}
 @media (max-width: 720px) {
   .topbar-inner, .narrative-inner, .statusbar-inner { padding-left: 16px; padding-right: 16px; }
   .view-container { padding: 16px; }

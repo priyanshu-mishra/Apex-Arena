@@ -110,7 +110,7 @@ export const CONCEPTS = {
   determinism: {
     title: "5-run SHA-256 determinism",
     formula: "hash(run₁) = hash(run₂) = … = hash(run₅)",
-    body: "The full kernel state is hashed after a seeded run. Five independent runs must produce the identical SHA-256 digest — proof that the benchmark is reproducible.",
+    body: "The native Rust kernel hashes its full state with SHA-256 after a seeded run. Five independent runs must produce the identical digest — proof that the benchmark is reproducible. (The in-browser JS port checks the same property with its own 256-bit FNV-1a digest.)",
   },
 } satisfies Record<string, Concept>;
 

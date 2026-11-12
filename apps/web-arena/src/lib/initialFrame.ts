@@ -17,7 +17,7 @@ export const INITIAL_FRAME: ArenaTelemetryFrame = {
   hawkesIntensityPips: 20000000,
   newsHeadline:
     "[WIRE] Institutional order flow balanced; L2 spreads anchored near 8-15 bps.",
-  stateHash: "0d8f0224c3de1ecd8a086b3fdbf35dd173f31e31547c17418e02f085da58f764",
+  stateHash: "0".repeat(64),
   evmReserveBaseEth: 1000,
   evmReserveQuoteUsdt: 2241100,
   evmInvariantK: "2.241B",
