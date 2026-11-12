@@ -3,6 +3,7 @@
  */
 
 import type {
+  BenchmarkResult,
   ArenaTelemetryFrame,
   CustomAgentConfig,
   MarketRegimeLabel,
@@ -38,7 +39,9 @@ export type WorkerCommand =
       config: CustomAgentConfig;
     }
   | { type: "RESET"; seed: number }
-  | { type: "VERIFY_5RUN_SHA256"; seed: number; ticks: number };
+  | { type: "VERIFY_5RUN_SHA256"; seed: number; ticks: number }
+  | { type: "CAPTURE_ARB"; sizeEth: number }
+  | { type: "RUN_BENCHMARK"; seed: number; ticksPerStage: number };
 
 export type WorkerEvent =
   | {
@@ -53,6 +56,17 @@ export type WorkerEvent =
       runs: number;
       allEqual: boolean;
       hashes: string[];
+    }
+  | {
+      type: "BENCHMARK_PROGRESS";
+      stageIndex: number;
+      stageCount: number;
+      stageName: string;
+      progress: number;
+    }
+  | {
+      type: "BENCHMARK_RESULT";
+      result: BenchmarkResult;
     };
 
 const WORKER_SOURCE = `
@@ -284,6 +298,51 @@ class DeterministicKernel {
       this.step();
       return;
     }
+    if (scenario === "whale-dump") {
+      // 450 ETH whale market-sells into the Revm x*y=k pool (30 bps fee)
+      const whaleIn = 450 * SCALE;
+      const feeNet = Math.floor(whaleIn * 9970 / 10000);
+      const usdtOut = Math.floor((this.reserveQuotePips * feeNet) / (this.reserveBasePips + feeNet));
+      const spotBefore = this.evmSpotPips();
+      this.reserveBasePips += whaleIn;
+      this.reserveQuotePips -= usdtOut;
+      const spotAfter = this.evmSpotPips();
+      const impactBps = Math.floor(((spotBefore - spotAfter) * 10000) / Math.max(1, spotBefore));
+      this.regimeCode = 1;
+      this.regimeLock = 45;
+      this.hawkesExcitationPips += 120000000;
+      this.swapNonce += 1;
+      this.blockNumber += 1;
+      this.pushEvmEvent(
+        "0x450e",
+        "0xWhale..d00d",
+        "WHALE_DUMP_450_ETH",
+        impactBps,
+        "[BLK #" + this.blockNumber + "] 0x450e.. WHALE SWAP 450.00 ETH->" + formatQtyPips(usdtOut) + " USDT | pool impact " + impactBps + "bps"
+      );
+      this.emitMacroReasoning();
+      this.step();
+      return;
+    }
+    if (scenario === "toxic-flow") {
+      // Informed (MEV / toxic) taker flow: one-sided aggression, adverse selection for makers
+      this.regimeCode = 2;
+      this.regimeLock = 50;
+      this.hawkesExcitationPips += 180000000;
+      this.imbalanceBps = -2600;
+      this.fundamentalPips = Math.floor(this.fundamentalPips * 0.991);
+      this.blockNumber += 1;
+      this.pushEvmEvent(
+        "0x70c1",
+        "0xMEV..searcher",
+        "TOXIC_FLOW_SANDWICH",
+        37,
+        "[BLK #" + this.blockNumber + "] 0x70c1.. MEV TOXIC FLOW: sandwich bundle front-ran pool, 37bps adverse selection"
+      );
+      this.emitMacroReasoning();
+      this.step();
+      return;
+    }
     if (scenario === "drought") {
       this.regimeCode = 2;
       this.regimeLock = 45;
@@ -469,6 +528,65 @@ class DeterministicKernel {
         detail: "30bps CFMM pool fee applied; slippage " + slipBps + "bps."
       });
     }
+    if (this.userReceipts.length > 20) this.userReceipts.length = 20;
+  }
+
+  captureArb(sizeEth) {
+    // Atomic CLOB <-> Revm cross-venue arbitrage for [YOU]
+    const user = this.agents["You (Live Desk)"];
+    const qtyPips = Math.max(1000000, Math.round(Number(sizeEth) * SCALE));
+    const spot = this.evmSpotPips();
+    const halfSpreadPips = Math.floor((this.clobMidPips * this.spreadBps) / 20000);
+    const bestBid = this.clobMidPips - halfSpreadPips;
+    const bestAsk = this.clobMidPips + halfSpreadPips;
+    this.swapNonce += 1;
+    this.blockNumber += 1;
+    const hashPrefix = "0x" + fnv256Hex(["USER_ARB", this.tick, this.swapNonce]).slice(0, 4);
+    let pnlPips = 0;
+    let route = "";
+    let ammPx = spot;
+    if (this.clobMidPips >= spot) {
+      // AMM cheap: buy ETH on Revm with USDT, sell ETH into CLOB bid
+      const usdtNeeded = Math.floor((this.reserveQuotePips * qtyPips) / Math.max(1, this.reserveBasePips - qtyPips));
+      const usdtIn = Math.floor(usdtNeeded * 10000 / 9970);
+      this.reserveQuotePips += usdtIn;
+      this.reserveBasePips -= qtyPips;
+      const proceeds = Math.floor((bestBid / SCALE) * qtyPips);
+      const fee = Math.floor(proceeds * 4 / 10000);
+      pnlPips = proceeds - fee - usdtIn;
+      user.cashQuotePips += pnlPips;
+      this.clobMidPips -= Math.floor((qtyPips / SCALE) * 4500000);
+      ammPx = Math.floor((usdtIn / qtyPips) * SCALE);
+      route = "BUY " + formatQtyPips(qtyPips) + " ETH on Revm @ " + formatDollarsPips(ammPx) + " -> SELL on CLOB @ " + formatDollarsPips(bestBid);
+    } else {
+      // AMM rich: buy ETH on CLOB ask, sell ETH into Revm pool
+      const cost = Math.floor((bestAsk / SCALE) * qtyPips);
+      const fee = Math.floor(cost * 4 / 10000);
+      const feeNet = Math.floor(qtyPips * 9970 / 10000);
+      const usdtOut = Math.floor((this.reserveQuotePips * feeNet) / (this.reserveBasePips + feeNet));
+      this.reserveBasePips += qtyPips;
+      this.reserveQuotePips -= usdtOut;
+      pnlPips = usdtOut - cost - fee;
+      user.cashQuotePips += pnlPips;
+      this.clobMidPips += Math.floor((qtyPips / SCALE) * 4500000);
+      ammPx = Math.floor((usdtOut / qtyPips) * SCALE);
+      route = "BUY " + formatQtyPips(qtyPips) + " ETH on CLOB @ " + formatDollarsPips(bestAsk) + " -> SELL on Revm @ " + formatDollarsPips(ammPx);
+    }
+    user.totalFills += 2;
+    const pnlUsd = (pnlPips / SCALE).toFixed(2);
+    this.pushEvmEvent(hashPrefix, "You (Live Desk)", "ATOMIC_ARB", 0, "[BLK #" + this.blockNumber + "] " + hashPrefix + ".. [YOU] ATOMIC ARB " + route + " | PnL $" + pnlUsd);
+    this.step();
+    this.userReceipts.unshift({
+      id: "arb-" + this.tick + "-" + this.userReceipts.length,
+      tick: this.tick,
+      venue: "REVM",
+      side: "SWAP",
+      orderType: "ATOMIC ARB",
+      priceFormatted: formatDollarsPips(ammPx),
+      qtyFormatted: formatQtyPips(qtyPips) + " ETH",
+      status: pnlPips >= 0 ? "ARB CAPTURED" : "ARB NEGATIVE (FEES > BASIS)",
+      detail: route + " | net PnL $" + pnlUsd + " after 30bps pool fee + 4bps taker fee."
+    });
     if (this.userReceipts.length > 20) this.userReceipts.length = 20;
   }
 
@@ -902,7 +1020,11 @@ class DeterministicKernel {
         deepseekEquityUsd: getEqUsd("DeepSeek-R1"),
         hawkesEquityUsd: getEqUsd("Hawkes-HFT"),
         mmAlphaEquityUsd: getEqUsd("MM-Alpha"),
-        userEquityUsd: getEqUsd("You (Live Desk)")
+        userEquityUsd: getEqUsd("You (Live Desk)"),
+        basisBps: basisBps,
+        spreadBps: this.spreadBps,
+        hawkesIntensity: Number((hawkesTotal / SCALE).toFixed(4)),
+        agentEquities: Object.keys(this.agents).reduce((acc, id) => { acc[id] = getEqUsd(id); return acc; }, {})
       },
       sharedBufferActive: isShared
     };
@@ -925,6 +1047,59 @@ function writeToSharedBuffer(frame) {
   floatView[5] = frame.imbalanceBps;
   floatView[6] = REGIMES.indexOf(frame.regime);
   floatView[7] = frame.hawkesIntensityPips;
+}
+
+const BENCH_STAGES = [
+  { key: "calm", name: "Calm baseline", inject: null },
+  { key: "toxic", name: "MEV toxic flow", inject: "toxic-flow" },
+  { key: "whale", name: "450 ETH AMM whale shock", inject: "whale-dump" },
+  { key: "crash", name: "350 bps flash cascade", inject: "flash-crash" }
+];
+
+function runBenchmark(seed, ticksPerStage) {
+  const k = new DeterministicKernel(seed);
+  // carry deployed custom agents into the tournament
+  Object.keys(kernel.customAgentConfigs || {}).forEach(id => k.deployCustomAgent(kernel.customAgentConfigs[id]));
+  const ids = Object.keys(k.agents);
+  const series = {};
+  ids.forEach(id => { series[id] = []; });
+  const stages = [];
+  const totalTicks = ticksPerStage * BENCH_STAGES.length;
+  let done = 0;
+  for (let s = 0; s < BENCH_STAGES.length; s++) {
+    const st = BENCH_STAGES[s];
+    if (st.inject) k.injectScenario(st.inject);
+    for (let t = 0; t < ticksPerStage; t++) {
+      k.step();
+      done++;
+      const f = k.buildFrame(false);
+      f.leaderboard.forEach(e => { if (series[e.agentId]) series[e.agentId].push(e.equityUsd); });
+      if (done % 40 === 0) {
+        self.postMessage({ type: "BENCHMARK_PROGRESS", stageIndex: s, stageCount: BENCH_STAGES.length, stageName: st.name, progress: done / totalTicks });
+      }
+    }
+    const f = k.buildFrame(false);
+    stages.push({ key: st.key, name: st.name, endTick: k.tick, regime: f.regime, clobMidUsd: f.clobMidUsd, evmSpotUsd: f.evmSpotUsd, basisBps: f.basisBps, hawkesIntensity: Number((f.hawkesIntensityPips / SCALE).toFixed(4)), leaderboard: f.leaderboard });
+  }
+  const final = k.buildFrame(false);
+  const agents = final.leaderboard.map(e => {
+    const eqs = series[e.agentId] || [];
+    let peak = eqs.length ? eqs[0] : e.equityUsd;
+    let mdd = 0;
+    let ups = 0;
+    let moves = 0;
+    for (let i = 0; i < eqs.length; i++) {
+      if (eqs[i] > peak) peak = eqs[i];
+      const dd = peak > 0 ? (peak - eqs[i]) / peak : 0;
+      if (dd > mdd) mdd = dd;
+      if (i > 0 && eqs[i] !== eqs[i - 1]) { moves++; if (eqs[i] > eqs[i - 1]) ups++; }
+    }
+    const stride = Math.max(1, Math.floor(eqs.length / 120));
+    const curve = eqs.filter((_, i) => i % stride === 0);
+    return Object.assign({}, e, { maxDrawdownPct: Number((mdd * 100).toFixed(3)), winRatePct: moves ? Number(((ups / moves) * 100).toFixed(1)) : 0, equityCurve: curve });
+  });
+  self.postMessage({ type: "BENCHMARK_PROGRESS", stageIndex: BENCH_STAGES.length - 1, stageCount: BENCH_STAGES.length, stageName: "Complete", progress: 1 });
+  self.postMessage({ type: "BENCHMARK_RESULT", result: { seed: seed, ticksPerStage: ticksPerStage, totalTicks: k.tick, stateHash: k.stateHash(), stages: stages, agents: agents } });
 }
 
 self.onmessage = function(ev) {
@@ -1000,6 +1175,13 @@ self.onmessage = function(ev) {
     const frame = kernel.buildFrame(isSharedBuffer);
     writeToSharedBuffer(frame);
     self.postMessage({ type: "FRAME", frame: frame, history: warmupHistory });
+  } else if (msg.type === "CAPTURE_ARB") {
+    kernel.captureArb(msg.sizeEth);
+    const frame = kernel.buildFrame(isSharedBuffer);
+    writeToSharedBuffer(frame);
+    self.postMessage({ type: "FRAME", frame: frame });
+  } else if (msg.type === "RUN_BENCHMARK") {
+    runBenchmark(msg.seed || 42, Math.max(50, Math.min(1000, msg.ticksPerStage || 200)));
   } else if (msg.type === "VERIFY_5RUN_SHA256") {
     const hashes = [];
     const testSeed = msg.seed || 42;

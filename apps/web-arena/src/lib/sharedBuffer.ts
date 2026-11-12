@@ -110,6 +110,14 @@ export interface PricePointUi {
   hawkesEquityUsd: number;
   mmAlphaEquityUsd: number;
   userEquityUsd: number;
+  /** Cross-venue basis (CLOB mid vs Revm spot) in bps at this tick. */
+  basisBps?: number;
+  /** Quoted CLOB spread in bps at this tick. */
+  spreadBps?: number;
+  /** Hawkes intensity λ(t) as a float (pips / SCALE). */
+  hawkesIntensity?: number;
+  /** Equity (USD) for every agent in the arena, keyed by agentId (includes custom agents). */
+  agentEquities?: Record<string, number>;
 }
 
 export interface ArenaTelemetryFrame {
@@ -158,4 +166,38 @@ export function allocateTelemetryBuffer(): {
     buffer: new ArrayBuffer(SAB_BYTE_LENGTH),
     isShared: false,
   };
+}
+
+export interface BenchmarkStageResult {
+  key: string;
+  name: string;
+  endTick: number;
+  regime: MarketRegimeLabel;
+  clobMidUsd: number;
+  evmSpotUsd: number;
+  basisBps: number;
+  hawkesIntensity: number;
+  leaderboard: LeaderboardEntryUi[];
+}
+
+export interface BenchmarkAgentResult extends LeaderboardEntryUi {
+  maxDrawdownPct: number;
+  winRatePct: number;
+  equityCurve: number[];
+}
+
+export interface BenchmarkResult {
+  seed: number;
+  ticksPerStage: number;
+  totalTicks: number;
+  stateHash: string;
+  stages: BenchmarkStageResult[];
+  agents: BenchmarkAgentResult[];
+}
+
+export interface BenchmarkProgress {
+  stageIndex: number;
+  stageCount: number;
+  stageName: string;
+  progress: number;
 }
