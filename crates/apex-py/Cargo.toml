@@ -1,0 +1,22 @@
+[package]
+name = "apex-py"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[lib]
+name = "_core"
+crate-type = ["cdylib", "rlib"]
+
+[features]
+default = []
+extension-module = ["pyo3/extension-module"]
+
+[dependencies]
+apex-types = { path = "../apex-types" }
+apex-clob = { path = "../apex-clob" }
+apex-evm = { path = "../apex-evm" }
+apex-kernel = { path = "../apex-kernel" }
+pyo3.workspace = true
+serde.workspace = true
+serde_json.workspace = true

@@ -1,0 +1,13 @@
+{
+  "mcpServers": {
+    "apex-arena-mcp": {
+      "command": "python3",
+      "args": ["-m", "apex_arena.mcp_server"],
+      "cwd": "sdks/python",
+      "env": {
+        "PYTHONPATH": "sdks/python",
+        "APEX_DEFAULT_SEED": "42"
+      }
+    }
+  }
+}

@@ -1,0 +1,11 @@
+[package]
+name = "apex-evm"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+apex-types = { path = "../apex-types" }
+revm.workspace = true
+serde.workspace = true
+sha2.workspace = true

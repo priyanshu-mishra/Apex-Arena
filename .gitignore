@@ -1,0 +1,30 @@
+# Rust / Cargo
+/target/
+**/*.rs.bk
+Cargo.lock
+
+# Python / PyO3 / Maturin
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.dylib
+*.pyd
+.venv/
+venv/
+build/
+dist/
+*.egg-info/
+.pytest_cache/
+
+# Node / Next.js
+node_modules/
+apps/web-arena/.next/
+apps/web-arena/out/
+apps/web-arena/build/
+.DS_Store
+*.log
+
+# Local tooling
+graphify-out/
+.remember/

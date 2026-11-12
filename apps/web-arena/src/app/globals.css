@@ -1,0 +1,162 @@
+:root {
+  /* Obsidian Microstructure Design Tokens */
+  --bg-void: #050505;
+  --bg-panel: #0B0C10;
+  --bg-elevated: #12151D;
+  --border-grid: #1C202B;
+  --border-focus: #38BDF8;
+  --text-primary: #F3F4F6;
+  --text-secondary: #9CA3AF;
+  --text-muted: #4B5563;
+  --color-bid: #00F59B;
+  --color-ask: #FF2E54;
+  --color-evm: #38BDF8;
+  --color-chaos: #F59E0B;
+  --color-llm: #A855F7;
+
+  --font-mono: "JetBrains Mono", "Berkeley Mono", "SFMono-Regular", Menlo, Monaco, Consolas, monospace;
+  --font-heading: "Inter Tight", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  border-radius: 0px !important;
+}
+
+html,
+body {
+  width: 100%;
+  height: 100%;
+  background-color: var(--bg-void);
+  color: var(--text-primary);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  line-height: 1.4;
+  font-variant-numeric: tabular-nums;
+  overflow: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1, "zero" 1;
+}
+
+.heading-tight {
+  font-family: var(--font-heading);
+  font-weight: 600;
+  letter-spacing: -0.03em;
+}
+
+/* Workstation Shell Grid */
+.workstation-shell {
+  display: grid;
+  grid-template-rows: 42px 1fr 28px;
+  width: 100vw;
+  height: 100vh;
+  background-color: var(--bg-void);
+}
+
+.top-ribbon {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 12px;
+  background-color: var(--bg-panel);
+  border-bottom: 1px solid var(--border-grid);
+  gap: 12px;
+}
+
+.quadrant-grid {
+  display: grid;
+  grid-template-columns: 46% 54%;
+  grid-template-rows: 52% 48%;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+.quadrant-pane {
+  display: flex;
+  flex-direction: column;
+  background-color: var(--bg-panel);
+  border-right: 1px solid var(--border-grid);
+  border-bottom: 1px solid var(--border-grid);
+  overflow: hidden;
+  position: relative;
+}
+
+.quadrant-pane:focus-within {
+  outline: 1px solid var(--border-focus);
+  outline-offset: -1px;
+}
+
+.quadrant-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 28px;
+  padding: 0 10px;
+  background-color: var(--bg-elevated);
+  border-bottom: 1px solid var(--border-grid);
+  font-family: var(--font-heading);
+  font-weight: 600;
+  letter-spacing: -0.03em;
+  font-size: 11px;
+  text-transform: uppercase;
+  color: var(--text-primary);
+  flex-shrink: 0;
+}
+
+.quadrant-body {
+  flex: 1;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.cyber-btn {
+  background-color: var(--bg-elevated);
+  color: var(--text-primary);
+  border: 1px solid var(--border-grid);
+  padding: 4px 9px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  text-transform: uppercase;
+  transition: border-color 80ms linear, background-color 80ms linear;
+}
+
+.cyber-btn:hover {
+  border-color: var(--border-focus);
+  background-color: #181d29;
+}
+
+.cyber-btn-danger {
+  border-color: var(--color-chaos);
+  color: var(--color-chaos);
+}
+
+.cyber-btn-danger:hover {
+  background-color: rgba(245, 158, 11, 0.15);
+  border-color: var(--color-chaos);
+}
+
+.cyber-btn-active {
+  border-color: var(--color-bid);
+  color: var(--color-bid);
+}
+
+.footer-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 12px;
+  background-color: var(--bg-panel);
+  border-top: 1px solid var(--border-grid);
+  font-size: 11px;
+  color: var(--text-secondary);
+}

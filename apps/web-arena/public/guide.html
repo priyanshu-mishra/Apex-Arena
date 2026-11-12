@@ -1,0 +1,746 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ApexArena — Interactive Zero-Context Guide, Math Simulators & Claude Master Blueprint</title>
+  <style>
+    :root {
+      --bg-void: #050505;
+      --bg-panel: #0B0C10;
+      --bg-elevated: #12151D;
+      --border-grid: #1C202B;
+      --border-focus: #38BDF8;
+      --text-primary: #F3F4F6;
+      --text-secondary: #9CA3AF;
+      --text-muted: #4B5563;
+      --color-bid: #00F59B;
+      --color-ask: #FF2E54;
+      --color-evm: #38BDF8;
+      --color-chaos: #F59E0B;
+      --color-llm: #A855F7;
+      --font-mono: "JetBrains Mono", "Berkeley Mono", "SFMono-Regular", Menlo, Monaco, Consolas, monospace;
+      --font-sans: "Inter Tight", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      border-radius: 0px !important;
+    }
+
+    body {
+      background-color: var(--bg-void);
+      color: var(--text-primary);
+      font-family: var(--font-sans);
+      line-height: 1.55;
+      font-size: 14px;
+      padding-bottom: 60px;
+    }
+
+    code, pre, .mono {
+      font-family: var(--font-mono);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .top-bar {
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      background-color: rgba(11, 12, 16, 0.96);
+      border-bottom: 1px solid var(--border-grid);
+      padding: 12px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 12px;
+      backdrop-filter: blur(8px);
+    }
+
+    .brand-badge {
+      background-color: var(--color-evm);
+      color: var(--bg-void);
+      font-family: var(--font-mono);
+      font-weight: 800;
+      padding: 4px 10px;
+      font-size: 12px;
+      letter-spacing: 0.04em;
+    }
+
+    .nav-tabs {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+
+    .tab-btn {
+      background-color: var(--bg-elevated);
+      color: var(--text-secondary);
+      border: 1px solid var(--border-grid);
+      padding: 7px 14px;
+      font-family: var(--font-mono);
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 100ms linear;
+    }
+
+    .tab-btn:hover {
+      border-color: var(--border-focus);
+      color: var(--text-primary);
+    }
+
+    .tab-btn.active {
+      border-color: var(--color-bid);
+      color: var(--color-bid);
+      background-color: rgba(0, 245, 155, 0.1);
+    }
+
+    .container {
+      max-width: 1280px;
+      margin: 24px auto;
+      padding: 0 20px;
+    }
+
+    .tab-section {
+      display: none;
+    }
+
+    .tab-section.active {
+      display: block;
+    }
+
+    .panel {
+      background-color: var(--bg-panel);
+      border: 1px solid var(--border-grid);
+      padding: 20px;
+      margin-bottom: 20px;
+    }
+
+    .panel-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--border-grid);
+      padding-bottom: 10px;
+      margin-bottom: 16px;
+    }
+
+    .panel-title {
+      font-family: var(--font-mono);
+      font-size: 13px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+    }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+    }
+
+    @media (max-width: 900px) {
+      .grid-2, .grid-3 {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .arch-node {
+      background-color: var(--bg-elevated);
+      border: 1px solid var(--border-grid);
+      padding: 14px;
+      cursor: pointer;
+      transition: all 100ms linear;
+    }
+
+    .arch-node:hover {
+      border-color: var(--color-evm);
+    }
+
+    .arch-node.selected {
+      border-color: var(--color-bid);
+      background-color: rgba(0, 245, 155, 0.08);
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 2px 7px;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      font-weight: 700;
+    }
+
+    .slider-row {
+      margin-bottom: 14px;
+    }
+
+    .slider-label {
+      display: flex;
+      justify-content: space-between;
+      font-family: var(--font-mono);
+      font-size: 12px;
+      margin-bottom: 4px;
+      color: var(--text-secondary);
+    }
+
+    input[type="range"] {
+      width: 100%;
+      accent-color: var(--color-evm);
+    }
+
+    .metric-box {
+      background-color: var(--bg-void);
+      border: 1px solid var(--border-grid);
+      padding: 12px;
+      font-family: var(--font-mono);
+    }
+
+    .metric-val {
+      font-size: 20px;
+      font-weight: 700;
+      margin-top: 4px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-family: var(--font-mono);
+      font-size: 12px;
+    }
+
+    th, td {
+      border: 1px solid var(--border-grid);
+      padding: 9px 12px;
+      text-align: left;
+    }
+
+    th {
+      background-color: var(--bg-elevated);
+      color: var(--text-secondary);
+    }
+
+    .prompt-pre {
+      background-color: var(--bg-void);
+      border: 1px solid var(--border-grid);
+      padding: 16px;
+      font-size: 12px;
+      color: #E5E7EB;
+      max-height: 540px;
+      overflow-y: auto;
+      white-space: pre-wrap;
+      line-height: 1.5;
+    }
+  </style>
+</head>
+<body>
+  <header class="top-bar">
+    <div style="display: flex; align-items: center; gap: 12px;">
+      <span class="brand-badge">[APEX-ARENA v1.0]</span>
+      <span class="mono" style="font-weight: 700; font-size: 13px;">
+        INTERACTIVE ARCHITECTURE GUIDE, MATH SIMULATOR &amp; CLAUDE BLUEPRINT
+      </span>
+    </div>
+
+    <nav class="nav-tabs">
+      <button class="tab-btn active" onclick="switchTab('story', this)">
+        1. ZERO-CONTEXT VISUAL GUIDE
+      </button>
+      <button class="tab-btn" onclick="switchTab('simulators', this)">
+        2. INTERACTIVE MATH SIMULATORS
+      </button>
+      <button class="tab-btn" onclick="switchTab('commercial', this)">
+        3. COMMERCIAL MVP ROADMAP
+      </button>
+      <button class="tab-btn" onclick="switchTab('claude', this)">
+        4. CLAUDE OVERHAUL PROMPT (COPY)
+      </button>
+      <a
+        href="/"
+        class="tab-btn"
+        style="text-decoration: none; border-color: var(--color-evm); color: var(--color-evm);"
+      >
+        ↗ BACK TO LIVE ARENA
+      </a>
+    </nav>
+  </header>
+
+  <main class="container">
+    <!-- TAB 1: ZERO-CONTEXT STORY & INTERACTIVE ARCHITECTURE -->
+    <section id="tab-story" class="tab-section active">
+      <div class="panel">
+        <div class="panel-header">
+          <span class="panel-title" style="color: var(--color-bid);">
+            EXECUTIVE BRIEF: WHAT IS APEXARENA IN PLAIN ENGLISH?
+          </span>
+          <span class="mono" style="color: var(--text-secondary); font-size: 11px;">
+            FOR HUMANS &amp; AI AGENTS WITH ZERO PRIOR CONTEXT
+          </span>
+        </div>
+        <p style="font-size: 15px; color: var(--text-primary); margin-bottom: 14px;">
+          <strong>ApexArena</strong> is a <strong>deterministic, multi-agent financial flight simulator and esports arena</strong> where high-frequency quantitative algorithms (Rust/Python) and autonomous AI reasoning models (Claude, Gemini, DeepSeek) trade head-to-head inside a coupled <strong>Off-Chain Central Limit Order Book (CLOB)</strong> and an <strong>On-Chain Ethereum Virtual Machine (Bluealloy Revm) Automated Market Maker (AMM)</strong>.
+        </p>
+        <div class="grid-3" style="margin-top: 16px;">
+          <div class="metric-box" style="border-left: 3px solid var(--color-ask);">
+            <div style="color: var(--color-ask); font-weight: 700; font-size: 12px;">
+              PROBLEM 1: STATIC BACKTESTS LIE
+            </div>
+            <p style="color: var(--text-secondary); font-size: 12px; margin-top: 6px;">
+              Traditional backtests replay historical CSV files and assume your orders have <strong>zero market impact</strong>. In reality, buying 100 ETH consumes the order book ladder, moves prices against you, and triggers predatory HFT counter-trading.
+            </p>
+          </div>
+          <div class="metric-box" style="border-left: 3px solid var(--color-chaos);">
+            <div style="color: var(--color-chaos); font-weight: 700; font-size: 12px;">
+              PROBLEM 2: LLMs COLLAPSE IN CRASHES
+            </div>
+            <p style="color: var(--text-secondary); font-size: 12px; margin-top: 6px;">
+              Frontier LLMs score 90%+ on static text benchmarks but blow up their accounts during sudden <strong>Flash Crashes</strong> and <strong>Liquidity Droughts</strong> when market regimes shift out-of-distribution (OOD).
+            </p>
+          </div>
+          <div class="metric-box" style="border-left: 3px solid var(--color-bid);">
+            <div style="color: var(--color-bid); font-weight: 700; font-size: 12px;">
+              THE APEXARENA SOLUTION
+            </div>
+            <p style="color: var(--text-secondary); font-size: 12px; margin-top: 6px;">
+              Couples a 10ms fast microstructure loop with a 1000ms Slow Macro LLM Barrier, an embedded Revm smart contract pool, and a self-exciting Hawkes Chaos Engine—100% reproducible down to a <strong>5-run SHA-256 hash</strong>.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- INTERACTIVE SYSTEM ARCHITECTURE EXPLORER -->
+      <div class="panel">
+        <div class="panel-header">
+          <span class="panel-title" style="color: var(--color-evm);">
+            INTERACTIVE ARCHITECTURE ATLAS — CLICK ANY SUBSYSTEM TO INSPECT
+          </span>
+          <span class="mono" style="color: var(--text-secondary); font-size: 11px;">
+            HEXAGONAL DETERMINISTIC KERNEL
+          </span>
+        </div>
+
+        <div class="grid-2">
+          <div style="display: flex; flex-direction: column; gap: 10px;">
+            <div class="arch-node selected" onclick="selectArchNode('clock', this)">
+              <div style="display: flex; justify-content: space-between;">
+                <strong class="mono" style="color: var(--color-bid);">1. DUAL-SPEED SYNCHRONIZATION BARRIER CLOCK</strong>
+                <span class="badge" style="background: rgba(0,245,155,0.15); color: var(--color-bid);">10ms / 1000ms</span>
+              </div>
+              <div style="font-size: 12px; color: var(--text-secondary); margin-top: 4px;">
+                Bridges sub-millisecond HFT execution with 1-second LLM tool reasoning without losing determinism.
+              </div>
+            </div>
+
+            <div class="arch-node" onclick="selectArchNode('clob', this)">
+              <div style="display: flex; justify-content: space-between;">
+                <strong class="mono" style="color: var(--color-evm);">2. L3 CENTRAL LIMIT ORDER BOOK (apex-clob)</strong>
+                <span class="badge" style="background: rgba(56,189,248,0.15); color: var(--color-evm);">BTreeMap + STP</span>
+              </div>
+              <div style="font-size: 12px; color: var(--text-secondary); margin-top: 4px;">
+                Price-Time Priority matching engine supporting Limit, Market, Post-Only, IOC, and Cancel-Newest STP.
+              </div>
+            </div>
+
+            <div class="arch-node" onclick="selectArchNode('revm', this)">
+              <div style="display: flex; justify-content: space-between;">
+                <strong class="mono" style="color: var(--color-evm);">3. EMBEDDED BLUEALLOY REVM SANDBOX (apex-evm)</strong>
+                <span class="badge" style="background: rgba(56,189,248,0.15); color: var(--color-evm);">x · y = k (30bps)</span>
+              </div>
+              <div style="font-size: 12px; color: var(--text-secondary); margin-top: 4px;">
+                In-memory EVM (CacheDB) executing real bytecode and constant-product AMM swaps at 0x0000..a9e8.
+              </div>
+            </div>
+
+            <div class="arch-node" onclick="selectArchNode('chaos', this)">
+              <div style="display: flex; justify-content: space-between;">
+                <strong class="mono" style="color: var(--color-chaos);">4. MARKOV REGIME &amp; HAWKES CHAOS ENGINE</strong>
+                <span class="badge" style="background: rgba(245,158,11,0.15); color: var(--color-chaos);">4 Regimes + λ(t)</span>
+              </div>
+              <div style="font-size: 12px; color: var(--text-secondary); margin-top: 4px;">
+                Transitions between Calm, Trending, Liquidity Drought, and Flash Crash with self-exciting panic cascades.
+              </div>
+            </div>
+
+            <div class="arch-node" onclick="selectArchNode('scoring', this)">
+              <div style="display: flex; justify-content: space-between;">
+                <strong class="mono" style="color: var(--color-llm);">5. APEX COMPOSITE SCORE (ACS) &amp; SHA-256 VERIFIER</strong>
+                <span class="badge" style="background: rgba(168,85,247,0.15); color: var(--color-llm);">PSR(0) + OOD</span>
+              </div>
+              <div style="font-size: 12px; color: var(--text-secondary); margin-top: 4px;">
+                Evaluates fat-tailed Sharpe, Capped Calmar, OOD Survival, Margin Liquidation, and 5-run SHA-256 parity.
+              </div>
+            </div>
+          </div>
+
+          <div id="arch-inspector" class="metric-box" style="display: flex; flex-direction: column; justify-content: space-between;"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 2: INTERACTIVE MATH & MICROSTRUCTURE SIMULATORS -->
+    <section id="tab-simulators" class="tab-section">
+      <div class="grid-2">
+        <div class="panel">
+          <div class="panel-header">
+            <span class="panel-title" style="color: var(--color-evm);">
+              SIMULATOR 1: REVM CONSTANT-PRODUCT AMM (x · y = k, 30bps FEE)
+            </span>
+          </div>
+          <p style="font-size: 12.5px; color: var(--text-secondary); margin-bottom: 14px;">
+            Drag the sliders below to simulate an on-chain <code>swapExactTokens</code> transaction inside <code>crates/apex-evm</code> and observe how slippage and cross-venue arbitrage emerge:
+          </p>
+
+          <div class="slider-row">
+            <div class="slider-label">
+              <span>ETH Swap Input (Δx):</span>
+              <strong id="amm-eth-val" style="color: var(--color-evm);">25 ETH</strong>
+            </div>
+            <input type="range" id="amm-eth-in" min="1" max="250" value="25" oninput="updateAmmSim()" />
+          </div>
+
+          <div class="slider-row">
+            <div class="slider-label">
+              <span>Pool Initial ETH Reserve (R_base):</span>
+              <strong id="amm-res-val" style="color: var(--text-primary);">1,000 ETH</strong>
+            </div>
+            <input type="range" id="amm-res-eth" min="250" max="3000" step="50" value="1000" oninput="updateAmmSim()" />
+          </div>
+
+          <div class="grid-2" style="margin-top: 14px;">
+            <div class="metric-box">
+              <div style="font-size: 11px; color: var(--text-secondary);">USDT RECEIVED (AFTER 30bps FEE)</div>
+              <div id="amm-usdt-out" class="metric-val" style="color: var(--color-bid);">$54,485.12</div>
+            </div>
+            <div class="metric-box">
+              <div style="font-size: 11px; color: var(--text-secondary);">REALIZED SLIPPAGE &amp; NEW SPOT</div>
+              <div id="amm-slippage" class="metric-val" style="color: var(--color-chaos);">247 bps ($2,132.40)</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-header">
+            <span class="panel-title" style="color: var(--color-llm);">
+              SIMULATOR 2: APEX COMPOSITE SCORE (ACS) CALCULATOR
+            </span>
+          </div>
+          <p style="font-size: 12.5px; color: var(--text-secondary); margin-bottom: 14px;">
+            Formula: <code>ACS = 0.40·PSR(0) + 0.30·Calmar + 0.20·Survival_OOD - 0.10·Turnover</code> (Disqualified = 0 if Liquidated).
+          </p>
+
+          <div class="slider-row">
+            <div class="slider-label">
+              <span>Probabilistic Sharpe Ratio PSR(0) [40% weight]:</span>
+              <strong id="acs-psr-val">92.0</strong>
+            </div>
+            <input type="range" id="acs-psr" min="0" max="100" value="92" oninput="updateAcsSim()" />
+          </div>
+
+          <div class="slider-row">
+            <div class="slider-label">
+              <span>Capped Calmar Ratio [30% weight]:</span>
+              <strong id="acs-cal-val">85.0</strong>
+            </div>
+            <input type="range" id="acs-cal" min="0" max="100" value="85" oninput="updateAcsSim()" />
+          </div>
+
+          <div class="slider-row">
+            <div class="slider-label">
+              <span>OOD Crash Survival Score [20% weight]:</span>
+              <strong id="acs-ood-val">90.0</strong>
+            </div>
+            <input type="range" id="acs-ood" min="0" max="100" value="90" oninput="updateAcsSim()" />
+          </div>
+
+          <div class="slider-row" style="display: flex; align-items: center; justify-content: space-between;">
+            <label class="mono" style="font-size: 12px; color: var(--color-ask); cursor: pointer;">
+              <input type="checkbox" id="acs-liq" onchange="updateAcsSim()" />
+              Breached Maintenance Margin? (Triggers Instant LIQ Disqualification)
+            </label>
+          </div>
+
+          <div class="metric-box" style="margin-top: 10px; display: flex; justify-content: space-between; align-items: center;">
+            <div>
+              <div style="font-size: 11px; color: var(--text-secondary);">FINAL APEX COMPOSITE SCORE (ACS)</div>
+              <div id="acs-final-status" style="font-size: 12px; color: var(--color-bid);">STATUS: ACTIVE (QUALIFIED)</div>
+            </div>
+            <div id="acs-final-score" class="metric-val" style="font-size: 28px; color: var(--color-evm);">80.30 / 100</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-header">
+          <span class="panel-title" style="color: var(--color-chaos);">
+            SIMULATOR 3: SELF-EXCITING HAWKES PROCESS λ(t) = λ₀ + Σ α·exp(-β(t - tᵢ))
+          </span>
+          <div style="display: flex; gap: 8px;">
+            <button class="tab-btn active" onclick="injectHawkesShock()">⚡ INJECT ORDER-BOOK PANIC SHOCK (+α)</button>
+            <button class="tab-btn" onclick="resetHawkesSim()">↺ RESET TO CALM</button>
+          </div>
+        </div>
+        <canvas id="hawkes-canvas" width="1200" height="200" style="width: 100%; height: 200px; background: #050505; border: 1px solid var(--border-grid);"></canvas>
+      </div>
+    </section>
+
+    <!-- TAB 3: COMMERCIAL MVP VISION & PRODUCT ROADMAP -->
+    <section id="tab-commercial" class="tab-section">
+      <div class="panel">
+        <div class="panel-header">
+          <span class="panel-title" style="color: var(--color-bid);">
+            COMMERCIAL MVP STRATEGY: TURNING APEXARENA INTO A VENTURE-SCALE PRODUCT
+          </span>
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th>Commercial Pillar</th>
+              <th>Target Customer</th>
+              <th>Core Value Proposition</th>
+              <th>Monetization Model</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td style="color: var(--color-evm); font-weight: 700;">1. B2B Evaluation-as-a-Service (EaaS)</td>
+              <td>Frontier AI Labs, Hedge Funds, Prop Trading Desks</td>
+              <td>Stress-test autonomous LLM &amp; RL trading agents against deterministic Flash Crashes, Oracle Lags, and endogenous L3 slippage before deploying real capital.</td>
+              <td>SaaS seat + compute credits ($2,500–$10,000/mo enterprise tier).</td>
+            </tr>
+            <tr>
+              <td style="color: var(--color-llm); font-weight: 700;">2. Verified Alpha &amp; Talent Scouting</td>
+              <td>Quantitative Developers, University Teams, Allocators</td>
+              <td>Cryptographically attested leaderboards (SHA-256 &amp; zkVM proofs) proving a strategy's PSR(0) and OOD Survival without revealing proprietary source code.</td>
+              <td>Tournament sponsorship, recruiting placement fees, verified API feeds.</td>
+            </tr>
+            <tr>
+              <td style="color: var(--color-bid); font-weight: 700;">3. Live Esports Spectator Arena &amp; Vaults</td>
+              <td>Retail Quants, Crypto/DeFi Community, AI Enthusiasts</td>
+              <td>24/7 live-streamed battle rooms pitting Claude, Gemini, GPT, and DeepSeek head-to-head with live reasoning traces and on-chain vault mirroring.</td>
+              <td>Vault performance fees &amp; premium strategy analytics subscriptions.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- TAB 4: CLAUDE OVERHAUL PROMPT -->
+    <section id="tab-claude" class="tab-section">
+      <div class="panel">
+        <div class="panel-header">
+          <span class="panel-title" style="color: var(--color-llm);">
+            COPY-PASTE MASTER PROMPT FOR CLAUDE (OPUS / SONNET / CLAUDE CODE)
+          </span>
+          <button id="copy-btn" class="tab-btn active" onclick="copyClaudePrompt()">
+            📋 COPY CLAUDE MASTER PROMPT TO CLIPBOARD
+          </button>
+        </div>
+        <p style="font-size: 13px; color: var(--text-secondary); margin-bottom: 12px;">
+          Paste the complete specification block below into Claude to give it 100% architectural context, strict fixed-point determinism invariants, and a concrete roadmap to expand ApexArena into a commercial multi-tenant SaaS MVP:
+        </p>
+        <pre id="claude-prompt-box" class="prompt-pre">You are acting as the Principal Distributed Systems Architect, Quantitative Microstructure Engineer, and Product Lead for ApexArena (/Users/priyanshum/Developer/Apex).
+
+1. SYSTEM OVERVIEW &amp; ARCHITECTURE
+ApexArena is an industrial-grade, bit-for-bit deterministic, multi-agent financial trading arena coupling:
+- `crates/apex-types`: Fixed-point primitives `FixedPrice(pub i64)` and `FixedQty(pub i64)` scaled by `SCALE = 100_000_000` (10^8) using `i128` intermediate notional products.
+- `crates/apex-clob`: L3 Central Limit Order Book using `BTreeMap&lt;FixedPrice, VecDeque&lt;Order&gt;&gt;`, Price-Time Priority, `Limit`/`Market`/`PostOnly`/`IOC` orders, and `Cancel-Newest` Self-Trade Prevention (STP).
+- `crates/apex-evm`: Embedded Bluealloy `revm` (`CacheDB&lt;EmptyDB&gt;`) running an in-memory constant-product AMM (`x * y = k`, 30 bps fee) at `0x000000000000000000000000000000000000a9e8`.
+- `crates/apex-kernel`: Dual-Speed Synchronization Barrier Clock (10ms fast microstructure loop + 1000ms slow macro LLM epoch barrier), 4-state Markov regime engine (`Calm`, `Trending`, `LiquidityDrought`, `FlashCrash`), self-exciting Hawkes process, ABIDES background ecology, Probabilistic Sharpe Ratio `PSR(0)`, Capped Calmar, OOD Survival, Apex Composite Score (`ACS`), and canonical SHA-256 `state_hash()`.
+- `crates/apex-tui`: Ratatui 4-quadrant workstation terminal UI (`--headless`, `--json`, `--verify-determinism`).
+- `crates/apex-py` &amp; `sdks/python/apex_arena`: PyO3 native extension (`apex_arena._core`), `HybridLLMMarketMaker` SDK, and JSON-RPC 2.0 Model Context Protocol (`mcp_server.py`) exposing 7 tools for LLM tool calling.
+- `apps/web-arena`: Next.js 15 "Obsidian Microstructure" 4-quadrant web workstation + Live Execution &amp; Stress-Test Bench powered by a Dedicated WebWorker, `SharedArrayBuffer`, TradingView `lightweight-charts`, and `/api/arena` native Rust/MCP bridge.
+
+2. NON-NEGOTIABLE INVARIANTS
+- Zero `f32`/`f64`, zero `HashMap`/`HashSet`, and zero `SystemTime::now()`/`Instant::now()`/`thread_rng()` in core Rust crates (`apex-types`, `apex-clob`, `apex-evm`, `apex-kernel`).
+- Always use `FixedPrice(i64)`, `FixedQty(i64)`, `BTreeMap`, `virtual_ts_ns: u64`, and `ChaCha8Rng::seed_from_u64(seed)`.
+- Every change must pass `./scripts/verify_determinism_hook.sh` (5-pass SHA-256 bit-for-bit state hash equality).
+
+3. COMMERCIAL MVP ENHANCEMENT ROADMAP
+Execute the following upgrades to evolve ApexArena into a commercially viable product:
+- Phase A (Live Multi-LLM BYOK Battle Bridge): Connect the 1000ms Macro Epoch Barrier in `sdks/python/apex_arena/mcp_server.py` and `apps/web-arena` to live Anthropic Claude, Google Gemini, and OpenRouter APIs with deterministic JSON-schema tool-call recording and replay caching.
+- Phase B (Persistent Tournament &amp; Replay Engine): Add DuckDB/Parquet tick-by-tick match recording so users can scrub backward/forward through historical Flash Crashes and share match permalinks.
+- Phase C (In-Browser Strategy Code Sandbox &amp; Monte Carlo Stress Matrix): Let users edit Python/TypeScript `on_tick` and `on_macro_epoch` hooks in the browser, run a 10-seed Monte Carlo batch against the Rust kernel, and compare ACS attribution waterfalls.</pre>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    function switchTab(id, btn) {
+      document.querySelectorAll('.tab-section').forEach(el => el.classList.remove('active'));
+      document.querySelectorAll('.nav-tabs .tab-btn').forEach(el => el.classList.remove('active'));
+      document.getElementById('tab-' + id).classList.add('active');
+      btn.classList.add('active');
+      if (id === 'simulators') {
+        drawHawkesCanvas();
+      }
+    }
+
+    const ARCH_DATA = {
+      clock: {
+        title: "1. DUAL-SPEED SYNCHRONIZATION BARRIER CLOCK",
+        file: "crates/apex-kernel/src/lib.rs",
+        human: "High-frequency algorithms trade every 10 milliseconds, while Large Language Models take ~1 second to reason. Instead of using wall-clock time (which causes race conditions), ApexArena steps virtual time by Δt = 10ms per fast tick, and every 100 ticks (1000ms) pauses the entire simulation so LLMs can inspect a MacroDigest and return tool calls.",
+        math: "virtual_ts_ns = t × 10,000,000 ns | Macro Barrier triggers when (tick % 100 == 0)"
+      },
+      clob: {
+        title: "2. L3 CENTRAL LIMIT ORDER BOOK (apex-clob)",
+        file: "crates/apex-clob/src/lib.rs",
+        human: "Matches buy (Bid) and sell (Ask) orders using strict Price-Time Priority (highest bid and lowest ask first; earliest order at the same price fills first). Includes Cancel-Newest Self-Trade Prevention so an agent can never wash-trade against its own resting orders.",
+        math: "Notional = (Price.0 as i128 × Qty.0 as i128) / 10^8 | Spread_bps = ((Ask - Bid) × 10,000) / Mid"
+      },
+      revm: {
+        title: "3. EMBEDDED BLUEALLOY REVM AMM SANDBOX (apex-evm)",
+        file: "crates/apex-evm/src/lib.rs",
+        human: "Embeds an in-memory Ethereum Virtual Machine (Bluealloy revm) hosting a Uniswap-style liquidity pool at 0x0000..a9e8. When off-chain CLOB prices move faster than on-chain pool reserves, arbitrage bots execute swapExactTokens to capture the spread.",
+        math: "ψ(R_base, R_quote) = R_base · R_quote = k | Δy = (Y · Δx · 9970 / 10000) / (X + Δx · 9970 / 10000)"
+      },
+      chaos: {
+        title: "4. MARKOV REGIME & HAWKES CHAOS ENGINE",
+        file: "crates/apex-kernel/src/chaos.rs",
+        human: "Uses a 4×4 Markov transition matrix to shift between Calm, Trending, Liquidity Drought, and Flash Crash regimes. During panics, a self-exciting Hawkes process spikes above Λ_panic, causing background market makers to widen spreads or pull bids.",
+        math: "λ(t) = λ₀ + Σ α · exp(-β(t - tᵢ)) | E_{t+1} = (E_t × 94,000,000) / 10^8 + α · I(shock)"
+      },
+      scoring: {
+        title: "5. APEX COMPOSITE SCORE (ACS) & SHA-256 VERIFIER",
+        file: "crates/apex-kernel/src/scoring.rs & tests/determinism_suite.rs",
+        human: "Ranks strategies by combining fat-tail adjusted Probabilistic Sharpe Ratio, Capped Calmar Ratio, and Out-of-Distribution Crash Survival. Any account breaching maintenance margin is immediately liquidated (ACS = 0).",
+        math: "ACS = 0.40·PSR(0) + 0.30·Calmar_capped + 0.20·Survival_OOD - 0.10·Penalty_turnover"
+      }
+    };
+
+    function selectArchNode(key, el) {
+      document.querySelectorAll('.arch-node').forEach(n => n.classList.remove('selected'));
+      if (el) el.classList.add('selected');
+      const d = ARCH_DATA[key];
+      document.getElementById('arch-inspector').innerHTML = `
+        <div>
+          <div style="color: var(--color-bid); font-weight: 700; font-size: 13px;">${d.title}</div>
+          <div style="color: var(--color-evm); font-size: 11px; margin-top: 4px;">Source: ${d.file}</div>
+          <p style="color: var(--text-primary); font-family: var(--font-sans); font-size: 13.5px; margin-top: 14px;">
+            ${d.human}
+          </p>
+        </div>
+        <div style="margin-top: 18px; padding: 10px; background: var(--bg-panel); border-left: 3px solid var(--color-llm);">
+          <div style="color: var(--text-secondary); font-size: 10px;">EXACT FIXED-POINT INVARIANT</div>
+          <div style="color: var(--color-llm); font-size: 12px; margin-top: 4px;">${d.math}</div>
+        </div>
+      `;
+    }
+
+    function updateAmmSim() {
+      const ethIn = Number(document.getElementById('amm-eth-in').value);
+      const resEth = Number(document.getElementById('amm-res-eth').value);
+      const spotBefore = 2241.50;
+      const resUsdt = resEth * spotBefore;
+
+      document.getElementById('amm-eth-val').textContent = ethIn + " ETH";
+      document.getElementById('amm-res-val').textContent = resEth.toLocaleString() + " ETH";
+
+      const netIn = ethIn * 0.997;
+      const usdtOut = (resUsdt * netIn) / (resEth + netIn);
+      const effPrice = usdtOut / ethIn;
+      const newSpot = (resUsdt - usdtOut) / (resEth + ethIn);
+      const slipBps = Math.round(Math.abs((effPrice - spotBefore) / spotBefore) * 10000);
+
+      document.getElementById('amm-usdt-out').textContent = "$" + usdtOut.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      document.getElementById('amm-slippage').textContent = slipBps + " bps ($" + newSpot.toFixed(2) + ")";
+    }
+
+    function updateAcsSim() {
+      const psr = Number(document.getElementById('acs-psr').value);
+      const cal = Number(document.getElementById('acs-cal').value);
+      const ood = Number(document.getElementById('acs-ood').value);
+      const liq = document.getElementById('acs-liq').checked;
+
+      document.getElementById('acs-psr-val').textContent = psr.toFixed(1);
+      document.getElementById('acs-cal-val').textContent = cal.toFixed(1);
+      document.getElementById('acs-ood-val').textContent = ood.toFixed(1);
+
+      const scoreEl = document.getElementById('acs-final-score');
+      const statusEl = document.getElementById('acs-final-status');
+
+      if (liq) {
+        scoreEl.textContent = "0.00 / 100";
+        scoreEl.style.color = "var(--color-ask)";
+        statusEl.textContent = "STATUS: LIQUIDATED (DISQUALIFIED — MARGIN BREACH)";
+        statusEl.style.color = "var(--color-ask)";
+      } else {
+        const acs = Math.max(0, 0.40 * psr + 0.30 * cal + 0.20 * ood - 0.10 * 2.5);
+        scoreEl.textContent = acs.toFixed(2) + " / 100";
+        scoreEl.style.color = "var(--color-evm)";
+        statusEl.textContent = "STATUS: ACTIVE (QUALIFIED)";
+        statusEl.style.color = "var(--color-bid)";
+      }
+    }
+
+    let hawkesSeries = Array.from({ length: 80 }, () => 0.20);
+    function injectHawkesShock() {
+      const last = hawkesSeries[hawkesSeries.length - 1] || 0.20;
+      let curr = Math.min(3.2, last + 0.95);
+      for (let i = 0; i < 15; i++) {
+        hawkesSeries.push(curr);
+        curr = 0.20 + (curr - 0.20) * 0.88;
+      }
+      hawkesSeries = hawkesSeries.slice(-80);
+      drawHawkesCanvas();
+    }
+
+    function resetHawkesSim() {
+      hawkesSeries = Array.from({ length: 80 }, () => 0.20);
+      drawHawkesCanvas();
+    }
+
+    function drawHawkesCanvas() {
+      const c = document.getElementById('hawkes-canvas');
+      if (!c) return;
+      const ctx = c.getContext('2d');
+      ctx.clearRect(0, 0, c.width, c.height);
+
+      const yPanic = c.height - (1.50 / 3.2) * (c.height - 30) - 15;
+      ctx.strokeStyle = '#F59E0B';
+      ctx.setLineDash([5, 5]);
+      ctx.beginPath();
+      ctx.moveTo(0, yPanic);
+      ctx.lineTo(c.width, yPanic);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.fillStyle = '#F59E0B';
+      ctx.font = '11px monospace';
+      ctx.fillText('Λ_panic = 1.50 (Liquidity Vacuum Threshold)', 12, yPanic - 6);
+
+      ctx.strokeStyle = '#00F59B';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      for (let i = 0; i < hawkesSeries.length; i++) {
+        const x = (i / (hawkesSeries.length - 1)) * (c.width - 20) + 10;
+        const y = c.height - (hawkesSeries[i] / 3.2) * (c.height - 30) - 15;
+        if (i === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      }
+      ctx.stroke();
+    }
+
+    function copyClaudePrompt() {
+      const text = document.getElementById('claude-prompt-box').innerText;
+      navigator.clipboard.writeText(text);
+      const btn = document.getElementById('copy-btn');
+      btn.textContent = "✓ COPIED TO CLIPBOARD!";
+      setTimeout(() => {
+        btn.textContent = "📋 COPY CLAUDE MASTER PROMPT TO CLIPBOARD";
+      }, 2200);
+    }
+
+    selectArchNode('clock', document.querySelector('.arch-node'));
+    updateAmmSim();
+    updateAcsSim();
+  </script>
+</body>
+</html>

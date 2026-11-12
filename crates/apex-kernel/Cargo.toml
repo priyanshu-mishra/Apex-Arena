@@ -1,0 +1,15 @@
+[package]
+name = "apex-kernel"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+apex-types = { path = "../apex-types" }
+apex-clob = { path = "../apex-clob" }
+apex-evm = { path = "../apex-evm" }
+rand.workspace = true
+rand_chacha.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+sha2.workspace = true

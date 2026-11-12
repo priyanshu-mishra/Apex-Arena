@@ -1,0 +1,28 @@
+[workspace]
+resolver = "2"
+members = [
+    "crates/apex-types",
+    "crates/apex-clob",
+    "crates/apex-evm",
+    "crates/apex-kernel",
+    "crates/apex-tui",
+    "crates/apex-py",
+]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+authors = ["ApexArena Systems Engineering"]
+
+[workspace.dependencies]
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+thiserror = "2.0"
+sha2 = "0.10"
+rand = "0.8"
+rand_chacha = "0.3"
+revm = { version = "19.0", default-features = false, features = ["std"] }
+ratatui = "0.29"
+crossterm = "0.28"
+pyo3 = { version = "0.24", default-features = false, features = ["macros", "abi3-py310"] }

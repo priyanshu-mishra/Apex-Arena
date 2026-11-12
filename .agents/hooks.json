@@ -1,0 +1,23 @@
+{
+  "version": "1.0",
+  "description": "ApexArena tool lifecycle & bit-for-bit determinism verification gates",
+  "hooks": {
+    "postEdit": [
+      {
+        "name": "verify-rust-determinism",
+        "match": "crates/**/*.rs",
+        "command": "./scripts/verify_determinism_hook.sh",
+        "timeoutMs": 60000,
+        "blocking": true
+      }
+    ],
+    "preSubmit": [
+      {
+        "name": "full-determinism-gate",
+        "command": "./scripts/verify_determinism_hook.sh",
+        "timeoutMs": 120000,
+        "blocking": true
+      }
+    ]
+  }
+}

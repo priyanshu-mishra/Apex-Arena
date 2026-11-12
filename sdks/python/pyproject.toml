@@ -1,0 +1,26 @@
+[build-system]
+requires = ["setuptools>=68.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "apex-arena"
+version = "0.1.0"
+description = "ApexArena Python Strategy SDK & Model Context Protocol (MCP) Server Bridge"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [{ name = "ApexArena Systems Engineering" }]
+dependencies = []
+
+[project.optional-dependencies]
+dev = ["pytest>=8.0"]
+
+[project.scripts]
+apex = "apex_arena.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["apex_arena*"]
+
+[tool.setuptools.package-data]
+apex_arena = ["*.so", "*.dylib", "*.pyd"]
