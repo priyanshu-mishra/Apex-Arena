@@ -29,3 +29,4 @@ apps/web-arena/build/
 graphify-out/
 .remember/
 apps/web-arena/.next-build/
+.playwright-mcp/
