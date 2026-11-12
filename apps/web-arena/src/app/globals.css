@@ -874,7 +874,7 @@ a:hover {
   border-radius: var(--r-md);
   background: #0f141d;
   box-shadow: var(--shadow-pop);
-  border-left: 3px solid var(--accent, var(--evm));
+  border: 1px solid color-mix(in srgb, var(--accent, var(--evm)) 40%, transparent);
   display: grid;
   gap: 2px;
   animation: toast-in 220ms var(--ease);

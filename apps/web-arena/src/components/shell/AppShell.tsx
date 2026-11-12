@@ -157,8 +157,11 @@ export function AppShell() {
               {yourRank ? <> · rank {yourRank} of {frame.leaderboard.length}</> : null}
             </span>
           ) : null}
-          <span style={{ marginLeft: "auto" }} title={frame.stateHash}>
-            State SHA-256 <span className="num text-2">{frame.stateHash.slice(0, 16)}…</span>
+          <span
+            style={{ marginLeft: "auto" }}
+            title={`${frame.stateHash}\nIn-browser kernel: 256-bit FNV-1a state digest. Native Rust kernel: SHA-256 (see Architecture).`}
+          >
+            State digest <span className="num text-2">{frame.stateHash.slice(0, 16)}…</span>
           </span>
         </div>
       </footer>
