@@ -45,7 +45,7 @@ cd apps/web-arena && bun run dev
    - **Apex Composite Score (ACS)**:
      $$\text{ACS} = 0.40 \cdot \text{PSR}(0) + 0.30 \cdot \text{Calmar}_{\text{capped}} + 0.20 \cdot \text{Survival}_{\text{OOD}} - 0.10 \cdot \text{Penalty}_{\text{turnover}}$$
      Accounts breaching the `5%` maintenance margin are immediately liquidated and disqualified (`ACS = 0`).
-4. **PyO3 Native Bridge & JSON-RPC 2.0 MCP Server (`crates/apex-py`, `sdks/python/apex_arena`)**: Exposes `get_market_digest`, `submit_batch_orders`, and `execute_evm_swap`.
+4. **PyO3 Native Bridge & JSON-RPC 2.0 MCP Server (`crates/apex-py`, `sdks/python/apex_arena`)**: Exposes 7 tools: `get_market_digest`, `get_orderbook_l2`, `submit_clob_order`, `execute_evm_swap`, `trigger_chaos_regime`, `get_leaderboard`, and `verify_determinism` (there is no batch-order tool; the stdio server takes one JSON-RPC request per line).
 5. **Next.js 15 Interactive Web Workstation (`apps/web-arena`)**: Browser workstation powered by a WebWorker (`src/workers/arena.worker.ts`) and a live backend API bridge (`src/app/api/arena/route.ts`) that invokes the compiled Rust binary (`target/debug/apex-tui`) and Python MCP server (`ApexMcpServer`).
 
 ---
@@ -72,12 +72,13 @@ cd apps/web-arena && bun run dev
 - `crates/apex-tui/src/{main.rs,ui.rs}` — Ratatui 4-quadrant TUI + `--headless`, `--json`, and `--verify-determinism` CLI modes.
 - `crates/apex-py/src/lib.rs` & `sdks/python/apex_arena/` — PyO3 native extension (`_core.abi3.so`) + Python SDK + MCP server.
 - `apps/web-arena/src/` — Next.js 15 React 19 Web Workstation:
-  - `app/page.tsx` — Main application shell & view orchestrator.
-  - `app/api/arena/route.ts` — Backend API bridge to native Rust `apex-tui` and Python `ApexMcpServer`.
-  - `workers/arena.worker.ts` — High-frequency simulation WebWorker, user trading desk (`[YOU]`), custom agent runner, and scenario injector.
-  - `lib/sharedBuffer.ts` — Shared TypeScript interfaces and zero-copy `SharedArrayBuffer` ring buffer layout.
-  - `components/OrderBookLadder.tsx` — L3 CLOB ladder with click-to-quote.
-  - `components/PriceRegimeChart.tsx` — TradingView `lightweight-charts` v5 canvas (CLOB vs Revm price & multi-agent equity curves).
-  - `components/EvmTelemetryFeed.tsx` — Revm AMM telemetry & swap stream.
-  - `components/LeaderboardPanel.tsx` — Live ACS leaderboard & liquidation tracker.
-  - `components/LiveTestBench.tsx` — 4-tab live order ticket, AMM swapper, chaos scenario lab, and native Rust/MCP verifier.
+  - `app/page.tsx` — Mounts `ArenaProvider` + `AppShell`.
+  - `app/api/arena/route.ts` — Backend API bridge to native Rust `apex-tui` and Python `ApexMcpServer`. Actions: `verify_rust_determinism`, `rust_snapshot`, `mcp_call`, `tools_list` (inputs allow-listed and clamped).
+  - `app/globals.css` — Design system tokens and primitives (Inter for words, JetBrains Mono only for numbers; 12px minimum text).
+  - `workers/arena.worker.ts` — In-browser JS port of the kernel (simulation, `[YOU]` desk, custom agents, scenarios incl. `whale-dump`/`toxic-flow`, `CAPTURE_ARB`, offline `RUN_BENCHMARK`). Its state digest is FNV-1a 256-bit, NOT SHA-256 — only the Rust kernel uses SHA-256.
+  - `lib/arena.tsx` — `ArenaProvider` / `useArena()`: sole owner of the worker; frame, history, actions, toasts, benchmark and determinism state shared by all views.
+  - `lib/sharedBuffer.ts` — Shared telemetry/benchmark types and `SharedArrayBuffer` layout. `lib/concepts.ts` (jargon → formula + live interpretation), `lib/narrative.ts` (live market commentary).
+  - `components/shell/` — Top nav (keys `1`–`5`), regime weather band, narrative bar, status bar, `⌘K` command palette.
+  - `components/ui/` — `Panel` (with "?" explain), `ConceptPill`, `KpiCard`, `Badge`, `Meter`, `Segmented`, `Tabs`.
+  - `components/views/` + per-view folders — `OverviewView` (`overview/`, guided tour), `ArenaView` (`arena/`: KPIs, order book, lightweight-charts v5 chart, execution dock, leaderboard), `AgentLabView` (`lab/`: MacroDigest, reasoning traces, agent builder), `BenchmarkView` (`bench/`: 4-stage suite, scorecard, JSON/print export), `ArchitectureView` (`arch/`: diagram, verification console, AMM/ACS calculators). View-specific styles live in CSS modules beside each view.
+  - Production build beside a running dev server: `NEXT_DIST_DIR=.next-build bun run build`.
