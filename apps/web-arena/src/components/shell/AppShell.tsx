@@ -138,6 +138,17 @@ export function AppShell() {
         </div>
       </div>
 
+      {process.env.NEXT_PUBLIC_STATIC_DEMO === "true" ? (
+        <aside className="narrative-bar" aria-label="Demo limitations">
+          <div className="narrative-inner">
+            <p className="narrative-text">
+              <strong>Browser demo.</strong> Trading, agents and benchmarks run in your browser.
+              Native Rust/Python proof tools require the local app.
+            </p>
+          </div>
+        </aside>
+      ) : null}
+
       <main className="view-container" key={view}>
         <ActiveView />
       </main>

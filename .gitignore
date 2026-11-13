@@ -29,4 +29,11 @@ apps/web-arena/build/
 graphify-out/
 .remember/
 apps/web-arena/.next-build/
+apps/web-arena/.next-pages/
 .playwright-mcp/
+.superpowers/
+.impeccable/mocks/
+.impeccable/review/
+
+# Superdesign scratch
+.superdesign/tmp/

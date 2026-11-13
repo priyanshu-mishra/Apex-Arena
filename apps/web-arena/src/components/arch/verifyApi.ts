@@ -122,9 +122,17 @@ export const SCALE = 1e8;
 export const pipsToUnit = (p: number) => p / SCALE;
 
 export async function postArena<T>(body: Record<string, unknown>): Promise<ApiResult<T>> {
+  if (process.env.NEXT_PUBLIC_STATIC_DEMO === "true") {
+    return {
+      ok: false,
+      ms: 0,
+      error: "Native Rust/Python verification is unavailable in the GitHub Pages demo.",
+      hint: "Run the project locally with `cargo build -p apex-tui` and `cd apps/web-arena && bun run dev`. The browser simulation and browser determinism check work in this demo.",
+    };
+  }
   const t0 = performance.now();
   try {
-    const res = await fetch("/api/arena", {
+    const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_PATH || ""}/api/arena`, {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify(body),
