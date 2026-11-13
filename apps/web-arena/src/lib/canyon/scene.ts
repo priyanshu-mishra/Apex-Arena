@@ -7,6 +7,7 @@
 import * as THREE from "three";
 import { AGENTS, POOL_ORIGIN, POOL_SCALE, SCORE_X } from "./cast";
 import { blendChapter, stagingTable, type ChapterState, type Vec3 } from "./chapters";
+import { createDprGovernor, stepDprGovernor } from "./dprGovernor";
 import { LEN, NEV, NL, SPAN, W, lambda, lvl, market, midBase, type MarketEvent } from "./model";
 import { REAL } from "./real";
 import { canyonState, drainCanyonInbox, useCanyon, type CanyonStore, type Mood } from "./store";
@@ -59,8 +60,6 @@ const INTRO_DELAY_S = 0.15;
 const INTRO_S = 2.6;
 const SLUG_S = 0.55;
 const DPR_LOW = 1.25;
-const PERF_WINDOW_MS = 2000;
-const PERF_SLOW_MS = 22;
 
 type Agent = { llm: boolean; hero: Vec3; score: Vec3; p: THREE.Vector3; pulse: number };
 
@@ -143,7 +142,7 @@ export class CanyonScene {
   private h = 1;
   private dpr: number;
   private dprLowered = false;
-  private perf = { ms: 0, n: 0 };
+  private readonly perf = createDprGovernor();
   private readonly listeners = new Set<() => void>();
   private readonly unsubscribe: () => void;
   private readonly v3 = new THREE.Vector3();
@@ -497,15 +496,10 @@ export class CanyonScene {
     if (!this.reducedMotion) this.watchPerf(raw);
   };
 
-  /** Drop DPR to 1.25 once if a 2 s window averages over 22 ms per frame. */
+  /** Drop DPR to 1.25 once if a 2 s window averages over 22 ms per frame (warm-up and outliers ignored). */
   private watchPerf(raw: number): void {
-    if (this.dprLowered || raw <= 0 || raw > 1000) return;
-    const p = this.perf;
-    p.ms += raw; p.n++;
-    if (p.ms < PERF_WINDOW_MS) return;
-    const avg = p.ms / p.n;
-    p.ms = 0; p.n = 0;
-    if (avg > PERF_SLOW_MS && this.dpr > DPR_LOW) {
+    if (this.dprLowered) return;
+    if (stepDprGovernor(this.perf, raw) && this.dpr > DPR_LOW) {
       this.dprLowered = true;
       this.resize(this.w, this.h);
     }
