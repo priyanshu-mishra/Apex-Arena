@@ -4,6 +4,8 @@
   "private": true,
   "scripts": {
     "dev": "next dev --port 3000",
+    "gen:real": "bun scripts/gen-real-data.ts",
+    "prebuild": "bun run gen:real",
     "build": "next build",
     "build:pages": "NEXT_PUBLIC_STATIC_DEMO=true NEXT_DIST_DIR=.next-pages next build",
     "start": "next start --port 3000",

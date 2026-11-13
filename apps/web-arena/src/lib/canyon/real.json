@@ -1,0 +1,85 @@
+{
+  "seed": 42,
+  "ticks": 300,
+  "scenario": "flash-crash",
+  "hash": "4ee5fa377dd4d01d6225c6dd5f4f8f7a2d9cda7db63319e71f3d1c1458725614",
+  "hashesEqual": true,
+  "mid": 2142.31026464,
+  "asks": [
+    [
+      2142.68711749,
+      1.858
+    ],
+    [
+      2143.73757892,
+      3.1
+    ],
+    [
+      2144.93421915,
+      6.5
+    ],
+    [
+      2146.00593605,
+      5.4
+    ],
+    [
+      2147.07765296,
+      7.8
+    ],
+    [
+      2148.14936987,
+      10.2
+    ],
+    [
+      2149.22108678,
+      12.6
+    ]
+  ],
+  "lambdaCalm": 0.21169262,
+  "leaderboard": [
+    {
+      "agentId": "Gemini-2.5",
+      "role": "reasoning agent",
+      "pnlBps": 95,
+      "maxDrawdownBps": 120,
+      "psr": 0.9999,
+      "calmar": 0.95,
+      "survival": 0.9904,
+      "acs": 0.883,
+      "liquidated": false
+    },
+    {
+      "agentId": "DeepSeek-R1",
+      "role": "reasoning agent",
+      "pnlBps": 40,
+      "maxDrawdownBps": 10,
+      "psr": 1,
+      "calmar": 1,
+      "survival": 0.9034,
+      "acs": 0.8806,
+      "liquidated": false
+    },
+    {
+      "agentId": "Hawkes-HFT",
+      "role": "quant algorithm",
+      "pnlBps": -43,
+      "maxDrawdownBps": 43,
+      "psr": 0,
+      "calmar": 0.2414,
+      "survival": 0.8095,
+      "acs": 0.2343,
+      "liquidated": false
+    },
+    {
+      "agentId": "MM-Alpha",
+      "role": "liquidated at the 5% margin limit",
+      "pnlBps": -470,
+      "maxDrawdownBps": 915,
+      "psr": 0.0001,
+      "calmar": 0.156,
+      "survival": 0,
+      "acs": 0,
+      "liquidated": true
+    }
+  ]
+}
