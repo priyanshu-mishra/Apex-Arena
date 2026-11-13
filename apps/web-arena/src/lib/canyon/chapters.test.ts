@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { CHAPTERS, blendChapter, chapterTable } from './chapters';
+import { CHAPTERS, blendChapter, chapterTable, stagingTable } from './chapters';
 
 describe('chapters', () => {
   it('has 10 chapters', () => {
@@ -22,5 +22,12 @@ describe('chapters', () => {
   });
   it('portrait keeps non-camera fields', () => {
     expect(chapterTable(0.6)[5].score).toBe(1);
+  });
+  it('stagingTable applies the portrait staging and leaves landscape untouched', () => {
+    expect(stagingTable(1.6)).toBe(CHAPTERS);
+    const p = stagingTable(0.6);
+    expect(p[0].pos).toEqual([0, 7, 32]);
+    expect([p[1].agents, p[2].agents, p[5].agents, p[5].score, p[5].dim]).toEqual([0, 0, 0, 0, 0.5]);
+    expect(CHAPTERS[5].score).toBe(1);
   });
 });

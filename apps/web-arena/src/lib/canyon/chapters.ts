@@ -54,6 +54,23 @@ export function chapterTable(aspect: number): ChapterState[] {
   });
 }
 
+/**
+ * Full staging table for an aspect ratio: `chapterTable` plus the prototype's
+ * portrait-only staging (agents off in chapters 1, 2 and 5; no score bars and
+ * a 50% scene in 5). Camera-only callers keep using `chapterTable`.
+ */
+export function stagingTable(aspect: number): ChapterState[] {
+  const t = chapterTable(aspect);
+  if (aspect >= 0.8) return t;
+  const out = t.map((c) => ({ ...c }));
+  out[5].agents = 0;
+  out[5].score = 0;
+  out[5].dim = 0.5;
+  out[1].agents = 0;
+  out[2].agents = 0;
+  return out;
+}
+
 const smoothstep = (e0: number, e1: number, x: number): number => {
   const k = Math.min(1, Math.max(0, (x - e0) / (e1 - e0)));
   return k * k * (3 - 2 * k);
