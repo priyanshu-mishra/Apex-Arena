@@ -2,7 +2,8 @@
  * Landing copy, verbatim from docs/design/landing/DESIGN_GUIDE.md §6.
  *
  * Precise lines use `*…*` to mark the emphasised (bone) spans the prototype
- * sets in <em>; strip the asterisks and the text is the guide's wording.
+ * sets in <em>, and `_{…}` / `^{…}` for its <sub> / <sup> (the guide writes
+ * these as `(…)`); strip the markers and the text is the guide's wording.
  * Title lines are the `.ln` mask-reveal lines; joined with a space they are
  * the guide's title.
  */
@@ -93,7 +94,7 @@ const c3 = {
   titleLines: ["Shocks breed", "shocks."],
   lede: "The market has four moods. Trigger one and watch it spread down the canyon, the way real panics feed on themselves.",
   precise:
-    "Self-exciting intensity *λ(t) = μ + Σ α·e^(−β(t−tᵢ))* under a Markov-switching regime chain: *Calm, ToxicFlow, FlashCrash* (350 bps liquidity evaporation), *EvmShock* (450 ETH whale swap).",
+    "Self-exciting intensity *λ(t) = μ + Σ α·e^{−β(t−tᵢ)}* under a Markov-switching regime chain: *Calm, ToxicFlow, FlashCrash* (350 bps liquidity evaporation), *EvmShock* (450 ETH whale swap).",
   moods: [
     { mood: "calm", name: "Calm", sub: "Orderly quotes" },
     { mood: "toxic", name: "Toxic flow", sub: "Informed bursts" },
@@ -101,6 +102,8 @@ const c3 = {
     { mood: "crash", name: "Flash crash", sub: "Liquidity vanishes" },
   ],
   readout: { k: "Shock intensity", s: "λ, events per tick" },
+  groupLabel: "Trigger a market mood",
+  traceLabel: "Live shock intensity over the last 20 seconds",
 } as const satisfies ChapterBase<"c3"> & Record<string, unknown>;
 
 const c4 = {
@@ -121,7 +124,7 @@ const c5 = {
   titleLines: ["Profit isn't", "the score.", "Survival is."],
   lede: "Agents are graded on steady, risk-adjusted results. Lose past the margin limit and the score is zero, whatever came before.",
   precise:
-    "*ACS = 0.40·PSR(0) + 0.30·Calmar(capped) + 0.20·Survival(OOD) − 0.10·Penalty(turnover)* · 5% maintenance-margin breach → liquidated, ACS = 0",
+    "*ACS = 0.40·PSR(0) + 0.30·Calmar_{capped} + 0.20·Survival_{OOD} − 0.10·Penalty_{turnover}* · 5% maintenance-margin breach → liquidated, ACS = 0",
   head: { agent: "Agent", profit: "Profit", drop: "Worst drop", psr: "PSR", calmar: "Calmar", survival: "Survival", acs: "Apex score" },
   weights: [
     { pct: "40%", label: "Confidence it wasn't luck" },
@@ -130,6 +133,7 @@ const c5 = {
     { pct: "−10%", label: "Churn" },
   ],
   caption: "Real engine output: flash-crash scenario, seed 42, 300 ticks. Agents are the arena's built-in entrants.",
+  tableCaption: "Leaderboard from the Rust engine, flash-crash scenario, seed 42, 300 ticks",
 } as const satisfies ChapterBase<"c5"> & Record<string, unknown>;
 
 const c6 = {
@@ -139,11 +143,13 @@ const c6 = {
   titleLines: ["Five runs.", "One market."],
   lede: "Start from the same seed and the whole market replays, down to the last bit. Any result can be re-run and checked by anyone.",
   precise:
-    "SHA-256 of the full kernel state after 300 ticks, seed 42. Output of apex-tui --verify-determinism; gate: ./scripts/verify_determinism_hook.sh. No floats, no hash maps, no wall clock.",
+    "*SHA-256* of the full kernel state after 300 ticks, seed 42. Output of *apex-tui --verify-determinism*; gate: *./scripts/verify_determinism_hook.sh*. No floats, no hash maps, no wall clock.",
   run: "run",
   match: "match",
   verdict: "/ 5 identical",
   verify: "Verify it yourself in the app",
+  verifyHref: "/app/proof",
+  rowsLabel: "Five runs with seed 42 produce the same SHA-256 state hash",
 } as const satisfies ChapterBase<"c6"> & Record<string, unknown>;
 
 const c7 = {

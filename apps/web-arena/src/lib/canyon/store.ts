@@ -89,3 +89,7 @@ export const useCanyon = create<CanyonStore>()((set, get) => ({
 
 /** Non-React read of the store; the scene calls this once per frame. */
 export const canyonState = (): CanyonStore => useCanyon.getState();
+
+// Test-only probe (e2e "scene blend follows scroll"); compiled out of production builds.
+if (process.env.NODE_ENV !== "production" && typeof window !== "undefined")
+  (window as Window & { __canyonState?: () => CanyonStore }).__canyonState = canyonState;

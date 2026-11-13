@@ -461,7 +461,7 @@
   letter-spacing: -0.03em;
 }
 .readV small {
-  font-size: 0.42em;
+  font-size: max(12px, 0.42em); /* 12px floor on narrow screens */
   color: var(--bone-2);
   letter-spacing: 0;
   margin-left: 0.3em;
@@ -676,5 +676,340 @@
   .root *::before {
     transition-duration: 0.01ms !important;
     animation-duration: 0.01ms !important;
+  }
+}
+
+/* ═════════ chapters 01–06 (Task 7) ═════════
+ * Appended after the mobile block on purpose: e.g. 04's title keeps its own
+ * size on phones, as `#c4 h2` out-ranks the prototype's mobile `h2` rule.
+ * Leaderboard, WeightBar and HashRows use utilities (the app reuses them).
+ */
+.root sub,
+.root sup {
+  /* The prototype's ~10px scripts break the 12px floor: keep 12px, set narrower. */
+  font-size: max(12px, 0.75em);
+  font-variation-settings: "wdth" 75;
+  letter-spacing: -0.03em;
+  line-height: 0;
+}
+
+/* 01 impact */
+.c1Head {
+  grid-column: 1 / 9;
+}
+.order {
+  grid-column: 1 / 6;
+}
+.orderLabel {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  font: 400 12.5px/1.2 var(--sans);
+  color: var(--bone-2);
+  margin-bottom: 12px;
+}
+.orderOut {
+  font: 500 clamp(22px, 2.5vw, 38px)/1 var(--mono);
+  font-variation-settings: "wdth" 80;
+  font-variant-numeric: tabular-nums;
+  color: var(--bone);
+  letter-spacing: -0.03em;
+}
+.orderOut small {
+  font-size: max(12px, 0.42em);
+  color: var(--bone-2);
+  margin-left: 0.3em;
+  font-weight: 400;
+  letter-spacing: 0;
+}
+.range {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 28px;
+  background: transparent;
+  cursor: ew-resize;
+}
+.range::-webkit-slider-runnable-track {
+  height: 1px;
+  background: var(--rule-2);
+}
+.range::-moz-range-track {
+  height: 1px;
+  background: var(--rule-2);
+}
+.range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 14px;
+  height: 28px;
+  margin-top: -14px;
+  background: var(--bone);
+  border-radius: var(--radius);
+}
+.range::-moz-range-thumb {
+  width: 14px;
+  height: 28px;
+  background: var(--bone);
+  border: 0;
+  border-radius: var(--radius);
+}
+.orderRow {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+  margin-top: 10px;
+}
+.c1r1 {
+  grid-column: 7 / 9;
+}
+.c1r2 {
+  grid-column: 9 / 11;
+}
+.c1r3 {
+  grid-column: 11 / 13;
+}
+
+/* 02 venues */
+.c2Head {
+  grid-column: 6 / -1;
+  text-align: right;
+  justify-self: end;
+}
+.c2Head .lede {
+  margin: 22px 0 0 auto;
+}
+.c2Head .precise {
+  margin: 14px 0 0 auto;
+}
+.c2r1 {
+  grid-column: 1 / 4;
+}
+.c2r2 {
+  grid-column: 4 / 7;
+}
+.c2r3 {
+  grid-column: 7 / 10;
+}
+.c2Fine {
+  grid-column: 10 / 13;
+  text-align: right;
+  align-self: end;
+}
+
+/* 03 chaos */
+.c3Head {
+  grid-column: 1 / 8;
+  grid-row: 2;
+  align-self: end;
+  padding-bottom: 30px;
+}
+.moods {
+  grid-column: 1 / 7;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  border: 1px solid var(--rule-2);
+  border-radius: var(--radius);
+}
+.moods button {
+  padding: 14px 12px 13px;
+  text-align: left;
+  border-left: 1px solid var(--rule-2);
+  transition:
+    background 0.2s var(--ease),
+    color 0.2s var(--ease);
+}
+.moods button:first-child {
+  border-left: 0;
+}
+.moods button b {
+  display: block;
+  font: 560 15px/1.1 var(--sans);
+  font-variation-settings: "wdth" 110;
+}
+.moods button span {
+  display: block;
+  margin-top: 6px;
+  font: 400 12px/1.3 var(--sans);
+  color: var(--bone-2);
+}
+.moods button:hover {
+  background: rgba(237, 234, 227, 0.06);
+}
+.moods button[aria-pressed="true"] {
+  background: var(--bone);
+  color: var(--ink);
+}
+.moods button[aria-pressed="true"] span {
+  color: rgba(5, 6, 8, 0.7);
+}
+.c3r1 {
+  grid-column: 8 / 10;
+}
+.trace {
+  grid-column: 10 / 13;
+  height: 74px;
+  position: relative;
+}
+.trace canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+/* 04 barrier (quiet) */
+.c4Stage {
+  grid-template-rows: 1fr auto 1fr;
+}
+.mid {
+  grid-column: 3 / 11;
+  grid-row: 2;
+  text-align: center;
+}
+.c4Title {
+  font-size: clamp(28px, 3.6vw, 56px);
+  font-weight: 500;
+}
+.mid .lede {
+  margin: 22px auto 0;
+  max-width: 30em;
+}
+.mid .precise {
+  margin: 16px auto 0;
+}
+.ticks {
+  display: grid;
+  grid-template-columns: repeat(100, 1fr);
+  height: 26px;
+  margin: 0 auto 34px;
+  max-width: 720px;
+  align-items: end;
+}
+.ticks i {
+  height: 8px;
+  border-left: 1px solid var(--bone-3);
+  opacity: 0.5;
+}
+.ticks i:nth-child(10n + 1) {
+  height: 14px;
+}
+.ticks i.on {
+  border-color: var(--bone);
+  opacity: 1;
+  height: 18px;
+}
+.ticks i.on:nth-child(10n + 1) {
+  height: 26px;
+}
+.clock {
+  display: flex;
+  justify-content: space-between;
+  max-width: 720px;
+  margin: -22px auto 34px;
+  font: 400 12px/1 var(--mono);
+  font-variation-settings: "wdth" 87.5;
+  font-variant-numeric: tabular-nums;
+  color: var(--bone-2);
+}
+.clock b {
+  font-weight: 500;
+  color: var(--bone);
+}
+.hold {
+  color: var(--shock);
+  opacity: 0;
+  transition: opacity 0.25s var(--ease);
+}
+.tickStrip[data-held] .hold {
+  opacity: 1;
+}
+
+/* 05 score */
+.c5Head {
+  grid-column: 1 / 7;
+}
+.board {
+  grid-column: 7 / -1;
+  grid-row: 1 / 4;
+  align-self: center;
+}
+.board .precise,
+.board .fine {
+  margin-top: 14px;
+}
+/* Precise columns of the shared leaderboard follow the page's switch. */
+:global(html[data-depth="precise"]) .main [data-pc] {
+  display: table-cell;
+}
+
+/* 06 proof */
+.c6Head {
+  grid-column: 1 / 9;
+}
+.runs {
+  grid-column: 1 / -1;
+  grid-row: 3;
+}
+
+@media (max-width: 860px) {
+  .c2Head {
+    text-align: left;
+    justify-self: start;
+  }
+  .c2Head .lede,
+  .c2Head .precise {
+    margin-left: 0;
+  }
+  .order {
+    grid-column: 1 / -1;
+  }
+  .c1r1,
+  .c2r1 {
+    grid-column: 1 / 5;
+  }
+  .c1r2,
+  .c2r2 {
+    grid-column: 5 / 9;
+  }
+  .c1r3,
+  .c2r3 {
+    grid-column: 9 / 13;
+  }
+  .c2Fine {
+    grid-column: 1 / -1;
+    text-align: left;
+  }
+  .moods {
+    grid-column: 1 / -1;
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .moods button {
+    padding: 10px;
+  }
+  .moods button:nth-child(3) {
+    border-left: 0;
+  }
+  .moods button:nth-child(n + 3) {
+    border-top: 1px solid var(--rule-2);
+  }
+  .moods button span {
+    display: none;
+  }
+  .c3r1 {
+    grid-column: 1 / 5;
+  }
+  .trace {
+    grid-column: 5 / 13;
+    height: 52px;
+  }
+  .mid {
+    grid-column: 1 / -1;
+  }
+  .board {
+    grid-column: 1 / -1;
+    grid-row: 3;
+    align-self: end;
+  }
+  .c5Head .lede {
+    display: none;
   }
 }

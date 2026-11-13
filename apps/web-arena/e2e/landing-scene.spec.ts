@@ -41,7 +41,8 @@ async function centrePixel(page: Page): Promise<[number, number, number]> {
 async function expectSceneRenders(page: Page, url: string) {
   const errors = collectErrors(page);
   await page.goto(url);
-  await expect(page.locator("canvas")).toHaveCount(1);
+  // One scene canvas (chapter 03's λ trace is a separate 2D canvas).
+  await expect(page.locator("canvas[data-canyon]")).toHaveCount(1);
   await page.waitForSelector('canvas[data-canyon][data-state="running"]', { timeout: 30_000 });
   await page.waitForTimeout(3000);
   const px = await centrePixel(page);
