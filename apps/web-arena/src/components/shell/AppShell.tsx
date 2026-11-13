@@ -1,23 +1,12 @@
 "use client";
 
 import React, { useEffect } from "react";
-import { useArena, VIEWS, fmtUsd, USER_AGENT_ID, type ViewId } from "../../lib/arena";
+import Link from "next/link";
+import { useArena, fmtUsd, USER_AGENT_ID } from "../../lib/arena";
+import { APP_ROUTES } from "../../lib/routes";
 import { buildNarrative } from "../../lib/narrative";
 import { Badge, Kbd } from "../ui";
 import { CommandPalette } from "./CommandPalette";
-import { OverviewView } from "../views/OverviewView";
-import { ArenaView } from "../views/ArenaView";
-import { AgentLabView } from "../views/AgentLabView";
-import { BenchmarkView } from "../views/BenchmarkView";
-import { ArchitectureView } from "../views/ArchitectureView";
-
-const VIEW_COMPONENTS: Record<ViewId, React.ComponentType> = {
-  overview: OverviewView,
-  arena: ArenaView,
-  lab: AgentLabView,
-  bench: BenchmarkView,
-  arch: ArchitectureView,
-};
 
 function isTypingTarget(t: EventTarget | null): boolean {
   if (!(t instanceof HTMLElement)) return false;
@@ -25,11 +14,11 @@ function isTypingTarget(t: EventTarget | null): boolean {
   return tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT" || t.isContentEditable;
 }
 
-export function AppShell() {
+export function AppShell({ children }: { children: React.ReactNode }) {
   const arena = useArena();
   const { frame, view, setView, paused, actions, setPaletteOpen, paletteOpen } = arena;
 
-  // Global keyboard shortcuts: 1–5 views, ⌘K / Ctrl+K palette, Space pause, . step
+  // Global keyboard shortcuts: 1–4 views, ⌘K / Ctrl+K palette, Space pause, . step
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
@@ -38,7 +27,7 @@ export function AppShell() {
         return;
       }
       if (paletteOpen || e.metaKey || e.ctrlKey || e.altKey || isTypingTarget(e.target)) return;
-      const v = VIEWS.find((x) => x.key === e.key);
+      const v = APP_ROUTES.find((x) => x.key === e.key);
       if (v) {
         e.preventDefault();
         setView(v.id);
@@ -58,40 +47,31 @@ export function AppShell() {
   const narrative = buildNarrative(frame);
   const you = frame.leaderboard.find((e) => e.agentId === USER_AGENT_ID);
   const yourRank = you ? frame.leaderboard.indexOf(you) + 1 : null;
-  const ActiveView = VIEW_COMPONENTS[view];
 
   return (
     <div className="app-shell" data-regime={frame.regime}>
       <div className="weather-band" aria-hidden />
       <header className="topbar">
         <div className="topbar-inner">
-          <button
-            type="button"
-            className="brand"
-            onClick={() => setView("overview")}
-            style={{ background: "none", border: 0, cursor: "pointer" }}
-            aria-label="ApexArena home"
-          >
+          <Link href="/" className="brand" aria-label="ApexArena home">
             <span className="brand-mark" aria-hidden>
               A
             </span>
             ApexArena
-          </button>
+          </Link>
 
-          <nav className="nav-tabs" role="tablist" aria-label="Workspaces">
-            {VIEWS.map((v) => (
-              <button
+          <nav className="nav-tabs" aria-label="Workspaces">
+            {APP_ROUTES.map((v) => (
+              <Link
                 key={v.id}
-                type="button"
-                role="tab"
+                href={v.href}
                 className="nav-tab"
-                aria-selected={view === v.id}
-                onClick={() => setView(v.id)}
+                aria-current={view === v.id ? "page" : undefined}
                 title={`${v.label} (${v.key})`}
               >
-                {v.short}
+                {v.label}
                 <Kbd>{v.key}</Kbd>
-              </button>
+              </Link>
             ))}
           </nav>
 
@@ -133,7 +113,7 @@ export function AppShell() {
             <strong>{narrative.headline}.</strong> {narrative.detail}
           </p>
           <span className="caption num narrative-tick" style={{ whiteSpace: "nowrap" }}>
-            tick {frame.tick.toLocaleString()} · block #{frame.blockNumber.toLocaleString()}
+            tick <span data-testid="sim-tick">{frame.tick.toLocaleString("en-US")}</span> · block #{frame.blockNumber.toLocaleString("en-US")}
           </span>
         </div>
       </div>
@@ -150,7 +130,7 @@ export function AppShell() {
       ) : null}
 
       <main className="view-container" key={view}>
-        <ActiveView />
+        {children}
       </main>
 
       <footer className="statusbar">

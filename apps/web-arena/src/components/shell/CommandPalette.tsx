@@ -1,7 +1,8 @@
 "use client";
 
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { useArena, VIEWS, SCENARIOS } from "../../lib/arena";
+import { useArena, SCENARIOS } from "../../lib/arena";
+import { APP_ROUTES } from "../../lib/routes";
 
 interface Command {
   id: string;
@@ -21,7 +22,7 @@ export function CommandPalette() {
 
   const commands = useMemo<Command[]>(() => {
     const list: Command[] = [];
-    VIEWS.forEach((v) =>
+    APP_ROUTES.forEach((v) =>
       list.push({ id: `view-${v.id}`, group: "Go to", label: v.label, hint: v.key, run: () => setView(v.id) })
     );
     SCENARIOS.forEach((s) =>
@@ -61,7 +62,7 @@ export function CommandPalette() {
       keywords: "sha256 hash",
       run: () => {
         actions.verifyDeterminism();
-        setView("arch");
+        setView("proof");
       },
     });
     list.push({
@@ -71,7 +72,7 @@ export function CommandPalette() {
       keywords: "tournament scorecard",
       run: () => {
         actions.runBenchmark();
-        setView("bench");
+        setView("benchmark");
       },
     });
     return list;

@@ -7,6 +7,7 @@
  * so switching views never pauses or re-creates the simulation.
  */
 
+import { usePathname, useRouter } from "next/navigation";
 import React, {
   createContext,
   useCallback,
@@ -31,16 +32,9 @@ import {
   type WorkerEvent,
 } from "../workers/arena.worker";
 import { INITIAL_FRAME } from "./initialFrame";
+import { APP_ROUTES, viewFromPathname, type ViewId } from "./routes";
 
-export type ViewId = "overview" | "arena" | "lab" | "bench" | "arch";
-
-export const VIEWS: { id: ViewId; label: string; short: string; key: string }[] = [
-  { id: "overview", label: "Overview & tour", short: "Overview", key: "1" },
-  { id: "arena", label: "Live trading arena", short: "Arena", key: "2" },
-  { id: "lab", label: "Agent lab", short: "Agent lab", key: "3" },
-  { id: "bench", label: "Chaos benchmark", short: "Benchmark", key: "4" },
-  { id: "arch", label: "Architecture & proof", short: "Architecture", key: "5" },
-];
+export type { ViewId } from "./routes";
 
 export type ToastTone = "bid" | "ask" | "evm" | "chaos" | "llm";
 export interface Toast {
@@ -154,7 +148,8 @@ export function ArenaProvider({ children }: { children: React.ReactNode }) {
   const [history, setHistory] = useState<PricePointUi[]>([]);
   const [paused, setPausedState] = useState(false);
   const [speed, setSpeedState] = useState(1);
-  const [view, setViewState] = useState<ViewId>("overview");
+  const router = useRouter();
+  const view = viewFromPathname(usePathname());
   const [determinism, setDeterminism] = useState<DeterminismState>({
     status: "idle",
     hashes: [],
@@ -324,9 +319,9 @@ export function ArenaProvider({ children }: { children: React.ReactNode }) {
   );
 
   const setView = useCallback((v: ViewId) => {
-    setViewState(v);
-    if (typeof window !== "undefined") window.scrollTo({ top: 0 });
-  }, []);
+    const route = APP_ROUTES.find((r) => r.id === v);
+    if (route) router.push(route.href);
+  }, [router]);
 
   const setTicket = useCallback((priceUsd: number, side: OrderSide) => {
     setTicketState({ priceUsd, side, nonce: Date.now() });
