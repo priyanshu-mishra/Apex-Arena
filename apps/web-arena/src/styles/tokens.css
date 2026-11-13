@@ -1,0 +1,37 @@
+:root {
+  --ink: #050608;
+  --ink-2: #0A0C10;
+  --haze: #141A24;
+  --haze-hot: #29110A;
+  --bone: #EDEAE3;
+  --bone-2: #A8A69F;
+  --bone-3: #8C8A84;
+  --rule: rgba(237, 234, 227, 0.13);
+  --rule-2: rgba(237, 234, 227, 0.28);
+  --bid: #45E0BC;
+  --ask: #FF5A45;
+  --pool: #6C9CFF;
+  --shock: #FFB020;
+  --grey: #7C8794;
+  --radius: 2px;
+
+  --background: var(--ink);
+  --foreground: var(--bone);
+  --card: var(--ink-2);
+  --card-foreground: var(--bone);
+  --popover: var(--ink-2);
+  --popover-foreground: var(--bone);
+  --primary: var(--bone);
+  --primary-foreground: var(--ink);
+  --secondary: var(--ink-2);
+  --secondary-foreground: var(--bone);
+  --muted: var(--ink-2);
+  --muted-foreground: var(--bone-2);
+  --accent: var(--haze);
+  --accent-foreground: var(--bone);
+  --destructive: var(--ask);
+  --destructive-foreground: var(--ink);
+  --border: var(--rule-2);
+  --input: var(--rule-2);
+  --ring: var(--bone);
+}

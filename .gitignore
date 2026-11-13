@@ -30,6 +30,8 @@ graphify-out/
 .remember/
 apps/web-arena/.next-build/
 apps/web-arena/.next-pages/
+apps/web-arena/test-results/
+apps/web-arena/playwright-report/
 .playwright-mcp/
 .superpowers/
 .impeccable/mocks/
