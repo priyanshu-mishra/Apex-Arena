@@ -15,8 +15,57 @@ const INITIAL = { tick: 0, mid: 2241.5, spreadBps: 4, lambda: 0.2, regime: "calm
 /**
  * The persistent status line. Fed by `scene.status` at 4 Hz through direct
  * DOM writes; `aria-live="off"` so it never chatters.
+ *
+ * The gate variant (gate.html) shows seed, tick, ETH and the boot `state`
+ * ("starting" → "open") in place of spread, λ and regime; its numbers move
+ * only once the boot has started the clock.
  */
-export function StatusLine() {
+export function StatusLine(props: { variant?: "landing" | "gate"; state?: string }) {
+  return props.variant === "gate" ? <GateStatusLine state={props.state ?? ""} /> : <LandingStatusLine />;
+}
+
+function GateStatusLine({ state }: { state: string }) {
+  const scene = useCanyon((st) => st.scene);
+  const tickRef = useRef<HTMLElement>(null);
+  const pxRef = useRef<HTMLElement>(null);
+
+  useEffect(() => {
+    // Ignore a landing scene still in the store mid-navigation; a reduced-motion still keeps its opening values.
+    if (!scene || scene.mode !== "gate" || scene.reducedMotion) return;
+    const last = { tick: "", px: "" };
+    // Every rendered frame, as gate.html does: the clock visibly starts.
+    const off = scene.onFrame(() => {
+      if (!scene.boot.run) return;
+      const t = tick(scene.status.tick), px = fmt(scene.status.mid);
+      if (tickRef.current && t !== last.tick) tickRef.current.textContent = last.tick = t;
+      if (pxRef.current && px !== last.px) pxRef.current.textContent = last.px = px;
+    });
+    return () => {
+      off();
+    };
+  }, [scene]);
+
+  return (
+    <div className={`${s.hud} ${s.hudGate}`} role="status" aria-live="off" aria-label="Market status">
+      <div>
+        {STATUS.seed} <b>42</b>
+      </div>
+      <div>
+        {STATUS.tick} <b ref={tickRef}>{tick(INITIAL.tick)}</b>
+      </div>
+      <div className={s.opt}>
+        {STATUS.eth} <b ref={pxRef}>{fmt(INITIAL.mid)}</b>
+      </div>
+      <div>
+        <b data-testid="gate-state">{state}</b>
+      </div>
+      <div className={s.hudSpacer} />
+      <div className={s.opt}>{STATUS.note}</div>
+    </div>
+  );
+}
+
+function LandingStatusLine() {
   const scene = useCanyon((st) => st.scene);
   const tickRef = useRef<HTMLElement>(null);
   const pxRef = useRef<HTMLElement>(null);

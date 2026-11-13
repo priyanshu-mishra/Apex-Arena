@@ -236,3 +236,24 @@ export const FOOTER = {
   left: "ApexArena · MIT · the scene on this page is simulated in your browser; tables and hashes are real engine output",
   right: "seed 42",
 } as const;
+
+/** The gate at /enter (guide §5 Gate, §6 Gate). */
+export const GATE = {
+  back: "Back to the overview",
+  seed: "42",
+  seedCaption: "seed",
+  bootLabel: "Start-up steps",
+  /** Each line lights at its time on the 2.6 s boot timeline. */
+  boot: [
+    { at: 0, text: "Seed 42 planted" },
+    { at: 0.9, text: "Order book and pool open" },
+    { at: 1.8, text: "Four agents awake. You make five." },
+  ],
+  done: "done",
+  title: "The arena is open.",
+  guest: "Continue as guest",
+  signIn: "Sign in (coming soon)",
+  note: "No account needed. Accounts arrive with hosting.",
+  starting: "starting",
+  open: "open",
+} as const;

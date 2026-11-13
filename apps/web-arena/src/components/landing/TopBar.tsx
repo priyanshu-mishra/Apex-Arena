@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { TOP_BAR } from "@/content/landing";
+import { GATE, TOP_BAR } from "@/content/landing";
 import { cn } from "@/lib/utils";
 import s from "./landing.module.css";
 import { useDepth } from "./useDepth";
@@ -16,7 +16,28 @@ export function CanyonGlyph() {
   );
 }
 
-export function TopBar() {
+/** Top bar. The gate variant keeps only the wordmark and "Back to the overview". */
+export function TopBar({ variant = "landing" }: { variant?: "landing" | "gate" }) {
+  if (variant === "gate") return <GateTopBar />;
+  return <LandingTopBar />;
+}
+
+function GateTopBar() {
+  return (
+    <header className={cn(s.top, s.topGate)}>
+      <Link className={s.mark} href="/" aria-label={`${TOP_BAR.wordmark}, ${GATE.back.toLowerCase()}`}>
+        <CanyonGlyph />
+        {TOP_BAR.wordmark}
+      </Link>
+      <span className={s.spacer} />
+      <Link className={s.back} href="/">
+        {GATE.back}
+      </Link>
+    </header>
+  );
+}
+
+function LandingTopBar() {
   const [depth, setDepth] = useDepth();
   return (
     <header className={s.top}>

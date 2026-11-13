@@ -3,15 +3,12 @@
 import { useGSAP } from "@gsap/react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
+import { prefersReducedMotion } from "@/lib/canyon/motion";
 import { useCanyon } from "@/lib/canyon/store";
 
 gsap.registerPlugin(ScrollTrigger, useGSAP);
 
 const clamp01 = (v: number) => (v < 0 ? 0 : v > 1 ? 1 : v);
-
-const reducedMotion = () =>
-  window.matchMedia("(prefers-reduced-motion: reduce)").matches ||
-  new URLSearchParams(window.location.search).has("rm");
 
 /**
  * Scroll wiring and reveals for the landing page. Renders nothing.
@@ -66,7 +63,7 @@ export function LandingMotion({ root = "main[data-landing]" }: { root?: string }
     document.documentElement.removeAttribute("data-motion");
     (window as Window & { __apexMotion?: boolean }).__apexMotion = true;
 
-    if (!reducedMotion()) {
+    if (!prefersReducedMotion()) {
       const hero = sections[0];
       // Title lines: 105% → 0 mask slide, expo.out 1.1 s, 80–90 ms stagger.
       main.querySelectorAll<HTMLElement>("[data-ln]").forEach((ln) => {

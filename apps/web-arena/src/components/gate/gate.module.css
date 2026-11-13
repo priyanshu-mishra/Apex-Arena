@@ -1,0 +1,161 @@
+/*
+ * The gate at /enter. Values are the approved prototype's
+ * (docs/design/landing/gate.html) and DESIGN_GUIDE.md §5 Gate, §7, §8.
+ * Chrome (top bar, buttons, status line, title mask) comes from landing.module.css.
+ */
+
+.gate {
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+}
+
+/* ───────── seed numeral (boot only) ───────── */
+.seed {
+  position: fixed;
+  left: 50%;
+  top: 38%;
+  transform: translate(-50%, -50%);
+  z-index: 3;
+  text-align: center;
+  pointer-events: none;
+}
+.seed b {
+  display: block;
+  font: 500 clamp(84px, 15vw, 220px) / 0.9 var(--mono);
+  font-variation-settings: "wdth" 75;
+  letter-spacing: -0.05em;
+  font-variant-numeric: tabular-nums;
+}
+.seed span {
+  font: 400 12px/1 var(--mono);
+  font-variation-settings: "wdth" 87.5;
+  color: var(--bone-2);
+}
+
+/* ───────── bottom panel: boot list left (cols 1–5), result right (7–12) ───────── */
+.panel {
+  position: fixed;
+  left: var(--m);
+  right: var(--m);
+  bottom: calc(var(--hud) + 34px);
+  z-index: 5;
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  column-gap: 24px;
+  align-items: end;
+}
+.boot {
+  grid-column: 1 / 6;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  font: 400 12px/1 var(--mono);
+  font-variation-settings: "wdth" 87.5;
+  font-variant-numeric: tabular-nums;
+  color: var(--bone-3);
+  border-top: 1px solid var(--rule-2);
+}
+.boot li {
+  display: grid;
+  grid-template-columns: 4.5em 1fr auto;
+  gap: 12px;
+  align-items: center;
+  height: 34px;
+  border-bottom: 1px solid var(--rule);
+  transition: color 0.3s;
+}
+.boot li span {
+  line-height: 1.2; /* a wrapped line on phones stays legible */
+}
+.boot li i {
+  font-style: normal;
+  color: var(--bone-3);
+}
+.boot li em {
+  font-style: normal;
+  opacity: 0;
+  color: var(--bid);
+  transition: opacity 0.25s;
+}
+.boot li[data-state="done"] {
+  color: var(--bone);
+}
+.boot li[data-state="done"] em {
+  opacity: 1;
+}
+
+.ready {
+  grid-column: 7 / -1;
+  justify-self: end;
+  text-align: right;
+}
+.title {
+  font: 560 clamp(34px, 4.9vw, 78px) / 0.94 var(--sans);
+  font-variation-settings: "wdth" 122;
+  letter-spacing: -0.035em;
+}
+.acts {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  margin-top: 26px;
+}
+.off {
+  border: 1px dashed var(--rule-2);
+  color: var(--bone-3);
+  background: none;
+  cursor: not-allowed;
+}
+.off:active {
+  transform: none;
+}
+.note {
+  margin-top: 14px;
+  font: 400 12px/1.5 var(--mono);
+  font-variation-settings: "wdth" 87.5;
+  color: var(--bone-3);
+}
+
+/*
+ * Before hydration on a direct load: with motion on (the pre-paint script set
+ * data-motion) the boot's hidden states; under reduced motion the final frame.
+ * Once the gate runs it sets data-boot and these step aside.
+ */
+:global(html[data-motion]) .gate:not([data-boot]) .seed > div,
+:global(html[data-motion]) .gate:not([data-boot]) [data-gate-rv] {
+  opacity: 0;
+}
+:global(html:not([data-motion])) .gate:not([data-boot]) .seed,
+.gate[data-boot="done"] .seed {
+  display: none;
+}
+:global(html:not([data-motion])) .gate:not([data-boot]) .boot li {
+  color: var(--bone);
+}
+:global(html:not([data-motion])) .gate:not([data-boot]) .boot li em {
+  opacity: 1;
+}
+
+@media (max-width: 860px) {
+  .panel {
+    grid-template-columns: 1fr;
+    row-gap: 22px;
+    bottom: calc(var(--hud) + 20px);
+  }
+  .boot,
+  .ready {
+    grid-column: 1 / -1;
+  }
+  .ready {
+    justify-self: start;
+    text-align: left;
+  }
+  .acts {
+    justify-content: flex-start;
+  }
+  .seed {
+    top: 26%;
+  }
+}

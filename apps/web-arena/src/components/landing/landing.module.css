@@ -71,6 +71,23 @@
 .spacer {
   flex: 1;
 }
+/* Gate variant (gate.html): no fade band, same padding on phones, a text link instead of the CTA. */
+.top.topGate {
+  padding: 18px var(--m);
+  background: none;
+}
+.back {
+  font: 500 13px/1 var(--sans);
+  color: var(--bone-2);
+  text-decoration: none;
+  border-bottom: 1px solid var(--rule-2);
+  padding-bottom: 4px;
+  transition: color 0.2s var(--ease), border-color 0.2s var(--ease);
+}
+.back:hover {
+  color: var(--bone);
+  border-color: var(--bone);
+}
 .depth {
   display: flex;
   align-items: center;
@@ -265,6 +282,13 @@
   .hud > div {
     padding: 0 10px;
   }
+}
+/* The gate's shorter line keeps full 16px cells on phones (gate.html). */
+.hud.hudGate > div {
+  padding: 0 16px;
+}
+.hud.hudGate > div:first-child {
+  padding-left: 0;
 }
 
 /* ───────── layout ───────── */

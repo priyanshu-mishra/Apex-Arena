@@ -342,6 +342,9 @@ export class CanyonScene {
     });
     this.scene.clear();
     this.renderer.dispose();
+    // dispose() frees GPU resources but keeps the context; release it now
+    // instead of at GC (Chrome caps live contexts at ~16 per page).
+    this.renderer.forceContextLoss();
     delete this.canvas.dataset.state;
   }
 
