@@ -1,0 +1,1061 @@
+<!doctype html>
+<html lang="en" data-depth="plain">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ApexArena: a market that fights back</title>
+<meta name="description" content="ApexArena tests AI trading agents in a live simulated market that reacts to every order, crashes on cue, and replays exactly.">
+<meta name="theme-color" content="#050608">
+<link rel="icon" href="data:,">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,300..800&family=Martian+Mono:wdth,wght@75..112.5,300..700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#050608; --ink-2:#0A0C10; --haze:#141A24;
+  --bone:#EDEAE3; --bone-2:#A8A69F; --bone-3:#8C8A84; --rule:rgba(237,234,227,.13); --rule-2:rgba(237,234,227,.28);
+  --bid:#45E0BC; --ask:#FF5A45; --pool:#6C9CFF; --shock:#FFB020;
+  --sans:"Archivo",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"Martian Mono",ui-monospace,"SF Mono",Menlo,monospace;
+  --m:clamp(16px,3.9vw,56px);          /* page margin */
+  --rail:clamp(0px,5vw,72px);          /* left chapter rail */
+  --hud:38px;
+  --ease:cubic-bezier(.2,.7,.1,1);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{background:var(--ink);color:var(--bone);-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;scroll-behavior:auto}
+body{font:400 17px/1.5 var(--sans);font-variation-settings:"wdth" 100;overflow-x:hidden;min-height:100vh;background:var(--ink)}
+a{color:inherit}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+:focus-visible{outline:2px solid var(--bone);outline-offset:3px}
+::selection{background:var(--bone);color:var(--ink)}
+.num,.mono{font-family:var(--mono);font-variation-settings:"wdth" 87.5;font-variant-numeric:tabular-nums;letter-spacing:-.01em}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+
+/* scene */
+#scene{position:fixed;inset:0;width:100%;height:100%;display:block;z-index:0;background:var(--ink)}
+#poster{position:fixed;inset:0;z-index:0;display:none;background:
+  radial-gradient(120% 60% at 50% 46%,#18202c 0%,transparent 60%),linear-gradient(#050608,#0a0c10)}
+.no-gl #poster{display:block}.no-gl #scene{display:none}
+#poster svg{position:absolute;left:0;bottom:12vh;width:100%;height:56vh}
+.grain{position:fixed;inset:0;z-index:1;pointer-events:none;opacity:.07;mix-blend-mode:overlay;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 .9 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
+.vignette{position:fixed;inset:0;z-index:1;pointer-events:none;background:
+  radial-gradient(130% 95% at 50% 45%,transparent 55%,rgba(5,6,8,.72) 100%)}
+#labels{position:fixed;inset:0;z-index:2;pointer-events:none;overflow:hidden}
+.tag{position:absolute;left:0;top:0;font:400 12px/1.25 var(--mono);font-variation-settings:"wdth" 87.5;color:var(--bone);white-space:nowrap;opacity:0;will-change:transform,opacity;padding:0 0 0 22px}
+.tag::before{content:"";position:absolute;left:0;top:.6em;width:16px;height:1px;background:var(--rule-2)}
+.tag i{font-style:normal;color:var(--bone-3);margin-left:.6em}
+.tag.left{padding:0 22px 0 0;transform-origin:right}
+.tag.left::before{left:auto;right:0}
+.tag.note{color:var(--bone-2);font-size:12px}
+.tag.bid{color:var(--bid)}.tag.ask{color:var(--ask)}.tag.pool{color:var(--pool)}
+
+/* top bar */
+.top{position:fixed;left:0;right:0;top:0;z-index:20;display:flex;align-items:center;gap:20px;padding:18px var(--m);
+  background:linear-gradient(rgba(5,6,8,.78),rgba(5,6,8,0))}
+.mark{display:flex;align-items:center;gap:10px;font:600 15px/1 var(--sans);font-variation-settings:"wdth" 118;letter-spacing:-.01em;text-decoration:none}
+.mark svg{width:22px;height:14px}
+.top .sp{flex:1}
+.depth{display:flex;align-items:center;border:1px solid var(--rule-2);border-radius:2px;height:34px}
+.depth button{height:32px;padding:0 12px;font:500 12.5px/1 var(--sans);color:var(--bone-2);border-radius:1px}
+.depth button[aria-pressed="true"]{background:var(--bone);color:var(--ink)}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:10px;height:34px;padding:0 16px;border-radius:2px;font:600 13.5px/1 var(--sans);font-variation-settings:"wdth" 108;text-decoration:none;white-space:nowrap;transition:background .2s var(--ease),color .2s var(--ease),border-color .2s var(--ease),transform .2s var(--ease)}
+.btn.pri{background:var(--bone);color:var(--ink)}
+.btn.pri:hover{background:#fff}
+.btn.ghost{border:1px solid var(--rule-2);color:var(--bone)}
+.btn.ghost:hover{border-color:var(--bone)}
+.btn.lg{height:52px;padding:0 26px;font-size:16px}
+.btn.xl{height:68px;padding:0 38px;font-size:19px}
+.btn:active{transform:translateY(1px)}
+.btn .dot{width:7px;height:7px;background:var(--shock);border-radius:50%}
+
+/* chapter rail */
+.rail{position:fixed;left:calc(var(--m) - 8px);top:50%;transform:translateY(-50%);z-index:20;display:flex;flex-direction:column;gap:2px}
+.rail a{display:flex;align-items:center;gap:10px;height:22px;text-decoration:none;font:400 12px/1 var(--mono);font-variation-settings:"wdth" 87.5;color:var(--bone-3)}
+.rail a::before{content:"";width:10px;height:1px;background:var(--bone-3);transition:width .3s var(--ease),background .3s}
+.rail a span{opacity:0;transform:translateX(-4px);transition:opacity .25s,transform .25s var(--ease)}
+.rail a.on{color:var(--bone)}.rail a.on::before{width:26px;background:var(--bone)}
+.rail a.on span,.rail:hover a span,.rail a:focus-visible span{opacity:1;transform:none}
+@media (max-width:1100px){.rail{display:none}}
+
+/* status line */
+.hud{position:fixed;left:0;right:0;bottom:0;height:var(--hud);z-index:20;display:flex;align-items:center;gap:0;padding:0 var(--m);
+  border-top:1px solid var(--rule);background:rgba(5,6,8,.82);font:400 12px/1 var(--mono);font-variation-settings:"wdth" 87.5;font-variant-numeric:tabular-nums;color:var(--bone-2);white-space:nowrap;overflow:hidden}
+.hud div{padding:0 16px;border-left:1px solid var(--rule);height:100%;display:flex;align-items:center;gap:8px}
+.hud div:first-child{padding-left:0;border-left:0}
+.hud b{font-weight:500;color:var(--bone)}
+.hud .sp{flex:1;border-left:0}
+.hud .regime b{transition:color .3s}
+.hud .regime::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--bid);transition:background .3s}
+.hud .regime.hot b{color:var(--shock)}.hud .regime.hot::before{background:var(--shock)}
+@media (max-width:860px){.hud .opt{display:none}.tag.note{display:none}}
+@media (max-width:520px){.hud .opt2{display:none}.hud div{padding:0 10px}}
+
+/* layout */
+main{position:relative;z-index:10}
+.chapter{position:relative}
+.stage{position:sticky;top:0;height:100vh;height:100svh;padding:84px var(--m) calc(var(--hud) + 28px) calc(var(--m) + var(--rail));display:grid;grid-template-columns:repeat(12,minmax(0,1fr));grid-template-rows:auto 1fr auto;column-gap:24px;pointer-events:none}
+.stage > *{pointer-events:auto}
+.flow{position:relative;min-height:100vh;padding:14vh var(--m) calc(var(--hud) + 10vh) calc(var(--m) + var(--rail))}
+h1,h2{font-family:var(--sans);font-weight:560;font-variation-settings:"wdth" 122;letter-spacing:-.035em;line-height:.94;text-wrap:balance}
+h1{font-size:clamp(44px,7.5vw,122px)}
+h2{font-size:clamp(34px,4.9vw,78px)}
+.ln{display:block;overflow:hidden;padding-bottom:.08em}
+.ln > span{display:block}
+.lede{font-size:clamp(16px,1.35vw,20px);line-height:1.45;color:var(--bone-2);max-width:34em;text-wrap:pretty}
+.lede b{color:var(--bone);font-weight:500}
+.precise{display:none;font:400 12px/1.7 var(--mono);font-variation-settings:"wdth" 87.5;color:var(--bone-2);max-width:62em}
+.precise em{font-style:normal;color:var(--bone)}
+[data-depth="precise"] .precise{display:block}
+.fine{font:400 12px/1.5 var(--mono);font-variation-settings:"wdth" 87.5;color:var(--bone-3)}
+.scrim-l::before,.scrim-r::before,.scrim-b::before,.scrim-c::before,.scrim-f::before{content:"";position:absolute;inset:0;z-index:-1;pointer-events:none}
+.scrim-l::before{background:radial-gradient(64% 58% at 8% 6%,rgba(5,6,8,.9) 0%,rgba(5,6,8,.55) 45%,transparent 78%),linear-gradient(0deg,rgba(5,6,8,.94) 0%,rgba(5,6,8,.7) 16%,transparent 34%)}
+.scrim-r::before{background:radial-gradient(64% 58% at 92% 6%,rgba(5,6,8,.9) 0%,rgba(5,6,8,.55) 45%,transparent 78%),linear-gradient(0deg,rgba(5,6,8,.94) 0%,rgba(5,6,8,.7) 16%,transparent 34%)}
+.scrim-b::before{background:linear-gradient(0deg,rgba(5,6,8,.96) 0%,rgba(5,6,8,.78) 22%,rgba(5,6,8,.3) 44%,transparent 58%)}
+.scrim-c::before{background:radial-gradient(46% 34% at 50% 52%,rgba(5,6,8,.78),transparent 80%)}
+.scrim-f::before{background:linear-gradient(90deg,rgba(5,6,8,.9) 0%,rgba(5,6,8,.6) 50%,rgba(5,6,8,.25) 100%)}
+
+/* 00 hero */
+#c0 .stage{position:relative;grid-template-rows:1fr auto}
+#c0 .title{grid-column:1/-1;grid-row:2;align-self:end;display:grid;grid-template-columns:repeat(12,minmax(0,1fr));column-gap:24px;row-gap:26px;align-items:end}
+#c0 h1{grid-column:1/-1}
+#c0 .lede{grid-column:1/7;color:var(--bone)}
+#c0 .precise{grid-column:1/8}
+#c0 .acts{grid-column:8/-1;display:flex;gap:12px;justify-content:flex-end;flex-wrap:wrap}
+
+
+/* instruments (no cards: rules only) */
+.inst{grid-column:1/-1;grid-row:3;display:grid;grid-template-columns:repeat(12,minmax(0,1fr));column-gap:24px;border-top:1px solid var(--rule-2);padding-top:18px;align-items:start}
+.read{display:flex;flex-direction:column;gap:6px}
+.read .k{font:400 12.5px/1.2 var(--sans);color:var(--bone-2)}
+.read .v{font:500 clamp(22px,2.5vw,38px)/1 var(--mono);font-variation-settings:"wdth" 80;font-variant-numeric:tabular-nums;letter-spacing:-.03em}
+.read .v small{font-size:.42em;color:var(--bone-2);letter-spacing:0;margin-left:.3em;font-weight:400}
+.read .s{font:400 12px/1.4 var(--mono);font-variation-settings:"wdth" 87.5;color:var(--bone-3)}
+.up{color:var(--bid)}.dn{color:var(--ask)}.pl{color:var(--pool)}.am{color:var(--shock)}
+
+/* 01 impact */
+#c1 .head{grid-column:1/9;grid-row:1}
+#c1 .lede{margin-top:22px}
+#c1 .precise{margin-top:14px}
+.order{grid-column:1/6}
+.order label{display:flex;justify-content:space-between;align-items:baseline;font:400 12.5px/1.2 var(--sans);color:var(--bone-2);margin-bottom:12px}
+.order output{font:500 clamp(22px,2.5vw,38px)/1 var(--mono);font-variation-settings:"wdth" 80;color:var(--bone);letter-spacing:-.03em}
+.order output small{font-size:.42em;color:var(--bone-2);margin-left:.3em;font-weight:400}
+input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:28px;background:transparent;cursor:ew-resize}
+input[type=range]::-webkit-slider-runnable-track{height:1px;background:var(--rule-2)}
+input[type=range]::-moz-range-track{height:1px;background:var(--rule-2)}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:28px;margin-top:-14px;background:var(--bone);border-radius:1px}
+input[type=range]::-moz-range-thumb{width:14px;height:28px;background:var(--bone);border:0;border-radius:1px}
+.order .row{display:flex;gap:14px;align-items:center;margin-top:10px}
+#c1 .r1{grid-column:7/9}#c1 .r2{grid-column:9/11}#c1 .r3{grid-column:11/13}
+
+/* 02 venues */
+#c2 .head{grid-column:6/-1;grid-row:1;text-align:right;justify-self:end}
+#c2 .lede{margin:22px 0 0 auto}
+#c2 .precise{margin:14px 0 0 auto}
+#c2 .r1{grid-column:1/4}#c2 .r2{grid-column:4/7}#c2 .r3{grid-column:7/10}
+#c2 .fine{grid-column:10/13;text-align:right;align-self:end}
+
+/* 03 chaos */
+#c3 .head{grid-column:1/8;grid-row:2;align-self:end;padding-bottom:30px}
+#c3 .lede{margin-top:22px}#c3 .precise{margin-top:14px}
+.moods{grid-column:1/7;display:grid;grid-template-columns:repeat(4,1fr);gap:0;border:1px solid var(--rule-2);border-radius:2px}
+.moods button{padding:14px 12px 13px;text-align:left;border-left:1px solid var(--rule-2);transition:background .2s,color .2s}
+.moods button:first-child{border-left:0}
+.moods button b{display:block;font:560 15px/1.1 var(--sans);font-variation-settings:"wdth" 110}
+.moods button span{display:block;margin-top:6px;font:400 12px/1.3 var(--sans);color:var(--bone-2)}
+.moods button:hover{background:rgba(237,234,227,.06)}
+.moods button[aria-pressed="true"]{background:var(--bone);color:var(--ink)}
+.moods button[aria-pressed="true"] span{color:rgba(5,6,8,.7)}
+#c3 .r1{grid-column:8/10}
+.trace{grid-column:10/13;height:74px;position:relative}
+.trace canvas{width:100%;height:100%;display:block}
+.trace .s{position:absolute;left:0;top:-2px;font:400 12px/1 var(--mono);color:var(--bone-3)}
+
+/* 04 barrier (quiet) */
+#c4 .stage{grid-template-rows:1fr auto 1fr}
+#c4 .mid{grid-column:3/11;grid-row:2;text-align:center}
+#c4 h2{font-size:clamp(28px,3.6vw,56px);font-weight:500}
+#c4 .lede{margin:22px auto 0;max-width:30em}
+#c4 .precise{margin:16px auto 0}
+.ticks{display:grid;grid-template-columns:repeat(100,1fr);gap:0;height:26px;margin:0 auto 34px;max-width:720px;align-items:end}
+.ticks i{height:8px;border-left:1px solid var(--bone-3);opacity:.5}
+.ticks i:nth-child(10n+1){height:14px}
+.ticks i.on{border-color:var(--bone);opacity:1;height:18px}
+.ticks i.on:nth-child(10n+1){height:26px}
+.clock{display:flex;justify-content:space-between;max-width:720px;margin:-22px auto 34px;font:400 12px/1 var(--mono);font-variation-settings:"wdth" 87.5;color:var(--bone-2);font-variant-numeric:tabular-nums}
+.clock b{font-weight:500;color:var(--bone)}
+.clock .hold{color:var(--shock);opacity:0;transition:opacity .25s}
+.held .clock .hold{opacity:1}
+
+/* 05 score */
+#c5 .head{grid-column:1/7;grid-row:1}
+#c5 .lede{margin-top:22px}
+#c5 .board{grid-column:7/-1;grid-row:1/4;align-self:center}
+table{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}
+th{font:400 12px/1.2 var(--sans);color:var(--bone-2);text-align:right;padding:0 0 10px 12px;border-bottom:1px solid var(--rule-2)}
+th:first-child,td:first-child{text-align:left;padding-left:0}
+td{white-space:nowrap;padding:15px 0 15px 12px;border-bottom:1px solid var(--rule);text-align:right;font:400 13px/1 var(--mono);font-variation-settings:"wdth" 87.5;vertical-align:baseline}
+td.who{font:560 clamp(17px,1.5vw,21px)/1 var(--sans);font-variation-settings:"wdth" 110;letter-spacing:-.01em}
+td.who small{white-space:normal;display:block;margin-top:6px;font:400 12px/1 var(--sans);font-variation-settings:"wdth" 100;color:var(--bone-2);letter-spacing:0}
+td.acs{font:500 clamp(24px,2.7vw,40px)/1 var(--mono);font-variation-settings:"wdth" 80;letter-spacing:-.03em;width:1%}
+tr.dead td{color:var(--bone-3)}tr.dead td.acs,tr.dead td.who small{color:var(--ask)}
+tr.dead td.who{text-decoration:line-through;text-decoration-thickness:1px}
+.pc{display:none}[data-depth="precise"] .pc{display:table-cell}
+.board .fine{margin-top:14px}
+.board .precise{margin-top:14px}
+.weights{display:grid;grid-template-columns:40fr 30fr 20fr 10fr;margin-top:22px;height:5px;gap:2px}
+.weights i{background:var(--bone)}.weights i:nth-child(2){opacity:.7}.weights i:nth-child(3){opacity:.45}.weights i:nth-child(4){background:var(--ask)}
+.wl{display:grid;grid-template-columns:40fr 30fr 20fr 10fr;gap:2px;margin-top:8px;font:400 12px/1.25 var(--sans);color:var(--bone-2)}
+.wl b{display:block;font:500 11px/1.4 var(--mono);color:var(--bone)}
+
+/* 06 proof */
+#c6 .head{grid-column:1/9;grid-row:1}
+#c6 .lede{margin-top:22px}
+.runs{grid-column:1/-1;grid-row:3;border-top:1px solid var(--rule-2)}
+.run{display:grid;grid-template-columns:5.5em 1fr 3.2em;align-items:center;border-bottom:1px solid var(--rule);height:clamp(30px,4.6vh,46px);font:400 clamp(8.5px,1.62vw,24px)/1 var(--mono);font-variation-settings:"wdth" 75;font-variant-numeric:tabular-nums;letter-spacing:0;opacity:.16;transition:opacity .35s var(--ease)}
+.run .n{font-size:12px;font-variation-settings:"wdth" 87.5;color:var(--bone-2)}
+.run .h{overflow:hidden;white-space:nowrap}
+.run .ok{font-size:12px;text-align:right;color:var(--bid);opacity:0;transition:opacity .3s}
+.run.on{opacity:1}.run.on .ok{opacity:1}
+.verdict{display:flex;justify-content:space-between;align-items:center;gap:20px;padding-top:16px;flex-wrap:wrap}
+.verdict .big{font:500 clamp(22px,2.5vw,38px)/1 var(--mono);font-variation-settings:"wdth" 80;letter-spacing:-.03em;color:var(--bone-3);transition:color .4s}
+.verdict.on .big{color:var(--bid)}
+.verdict .precise{flex:1;min-width:280px}
+
+/* 07 stack */
+#c7 h2{max-width:11em}
+.stack{margin-top:7vh;border-top:1px solid var(--rule-2)}
+.layer{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));column-gap:24px;align-items:baseline;padding:26px 0;border-bottom:1px solid var(--rule)}
+.layer .w{grid-column:1/5;font:560 clamp(26px,3.2vw,50px)/1 var(--sans);font-variation-settings:"wdth" 122;letter-spacing:-.03em}
+.layer .t{grid-column:5/7;font:400 12px/1.4 var(--mono);font-variation-settings:"wdth" 87.5;color:var(--bone-2)}
+.layer .d{grid-column:7/-1;font-size:clamp(16px,1.35vw,20px);line-height:1.4;color:var(--bone)}
+.layer .precise{margin-top:8px}
+
+/* 08 credit, 09 close */
+#c8{min-height:86vh;display:flex;flex-direction:column;justify-content:center}
+#c8 .by{font-size:clamp(16px,1.35vw,20px);color:var(--bone-2)}
+#c8 .name{font:560 clamp(44px,8vw,132px)/.94 var(--sans);font-variation-settings:"wdth" 122;letter-spacing:-.04em;margin:10px 0 26px}
+#c8 .links{display:flex;gap:28px;flex-wrap:wrap;align-items:baseline;font:500 16px/1 var(--sans)}
+#c8 .links a{text-decoration:none;border-bottom:1px solid var(--rule-2);padding-bottom:5px;transition:border-color .2s}
+#c8 .links a:hover{border-color:var(--bone)}
+#c8 .links .todo{color:var(--shock);font:400 12px/1 var(--mono)}
+#c9{display:flex;flex-direction:column;justify-content:flex-end;align-items:flex-start;gap:30px}
+#c9 h2{font-size:clamp(52px,12vw,200px);letter-spacing:-.045em}
+#c9 .row{display:flex;gap:22px;align-items:center;flex-wrap:wrap}
+footer{position:relative;z-index:10;display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;padding:18px var(--m) calc(var(--hud) + 18px) calc(var(--m) + var(--rail));border-top:1px solid var(--rule);font:400 12px/1.5 var(--mono);font-variation-settings:"wdth" 87.5;color:var(--bone-3);background:rgba(5,6,8,.6)}
+
+/* mobile */
+@media (max-width:860px){
+  .stage{padding:76px var(--m) calc(var(--hud) + 18px);column-gap:12px}
+  .top{padding:12px var(--m);gap:10px}
+  .top .btn{display:none}
+  .depth{height:32px}.depth button{height:30px;padding:0 10px}
+  #c0 .lede,#c0 .precise{grid-column:1/-1}
+  #c0 .acts{grid-column:1/-1;justify-content:flex-start}
+  #c0 .title{row-gap:18px}
+  #c1 .head,#c2 .head,#c3 .head,#c5 .head,#c6 .head{grid-column:1/-1}
+  #c2 .head{text-align:left;justify-self:start}#c2 .lede,#c2 .precise{margin-left:0}
+  .inst{row-gap:16px}
+  .order{grid-column:1/-1}
+  #c1 .r1{grid-column:1/5}#c1 .r2{grid-column:5/9}#c1 .r3{grid-column:9/13}
+  #c2 .r1{grid-column:1/5}#c2 .r2{grid-column:5/9}#c2 .r3{grid-column:9/13}#c2 .fine{grid-column:1/-1;text-align:left}
+  .moods{grid-column:1/-1;grid-template-columns:repeat(2,1fr)}
+  .moods button:nth-child(3){border-left:0}.moods button:nth-child(n+3){border-top:1px solid var(--rule-2)}
+  .moods button{padding:10px}.moods button span{display:none}
+  #c3 .r1{grid-column:1/5}.trace{grid-column:5/13;height:52px}
+  #c4 .mid{grid-column:1/-1}
+  #c5 .board{grid-column:1/-1;grid-row:3;align-self:end}
+  #c5 .lede{display:none}
+  td{padding:10px 0 10px 8px;font-size:11px}.hide-s{display:none}
+  .read .s{display:none}
+  .run{grid-template-columns:2.4em 1fr 0;height:26px}.run .ok{display:none}
+  .layer .w{grid-column:1/-1}.layer .t{grid-column:1/-1;margin:8px 0}.layer .d{grid-column:1/-1}
+  .flow{padding-top:10vh}
+  h2{font-size:clamp(32px,9.4vw,60px)}
+  .scrim-l::before,.scrim-r::before{background:linear-gradient(180deg,rgba(5,6,8,.9) 0%,rgba(5,6,8,.25) 38%,rgba(5,6,8,.25) 58%,rgba(5,6,8,.92) 100%)}
+}
+@media (prefers-reduced-motion:reduce){*{transition-duration:.01ms!important;animation-duration:.01ms!important}}
+</style>
+</head>
+<body>
+<canvas id="scene" aria-hidden="true"></canvas>
+<div id="poster" aria-hidden="true">
+  <svg viewBox="0 0 1440 500" preserveAspectRatio="none" fill="none">
+    <path d="M0 40h90v50h90v45h90v50h90v55h90v60h90v70h90v90h60" stroke="#45E0BC" stroke-opacity=".7"/>
+    <path d="M1440 30h-90v55h-90v45h-90v55h-90v50h-90v65h-90v70h-90v90h-60" stroke="#FF5A45" stroke-opacity=".7"/>
+    <path d="M720 500V120" stroke="#EDEAE3" stroke-opacity=".5" stroke-dasharray="2 6"/>
+  </svg>
+</div>
+<div class="vignette" aria-hidden="true"></div>
+<div class="grain" aria-hidden="true"></div>
+<div id="labels" aria-hidden="true"></div>
+
+<header class="top">
+  <a class="mark" href="#c0" aria-label="ApexArena, back to top">
+    <svg viewBox="0 0 22 14" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M1 1h4v4h3v4h2v4"/><path d="M21 1h-4v4h-3v4h-2v4"/></svg>
+    ApexArena
+  </a>
+  <span class="sp"></span>
+  <div class="depth" role="group" aria-label="Level of detail">
+    <button type="button" data-set="plain" aria-pressed="true">Plain</button>
+    <button type="button" data-set="precise" aria-pressed="false">Precise</button>
+  </div>
+  <a class="btn pri" href="gate.html">Enter the arena</a>
+</header>
+
+<nav class="rail" aria-label="Chapters">
+  <a href="#c0"><span>00 The market</span></a>
+  <a href="#c1"><span>01 Impact</span></a>
+  <a href="#c2"><span>02 Two venues</span></a>
+  <a href="#c3"><span>03 Chaos</span></a>
+  <a href="#c4"><span>04 The barrier</span></a>
+  <a href="#c5"><span>05 Score</span></a>
+  <a href="#c6"><span>06 Proof</span></a>
+  <a href="#c7"><span>07 Stack</span></a>
+  <a href="#c8"><span>08 Credit</span></a>
+</nav>
+
+<main>
+<!-- 00 -->
+<section class="chapter" id="c0" data-h="100">
+  <div class="stage scrim-b">
+    <div class="title">
+      <h1><span class="ln"><span>A market that</span></span><span class="ln"><span>fights back.</span></span></h1>
+      <p class="lede" data-rv>ApexArena tests AI trading agents in a live simulated market. It reacts to every order, crashes on cue, and replays exactly.</p>
+      <div class="acts" data-rv>
+        <a class="btn pri lg" href="gate.html">Enter the arena</a>
+        <button class="btn ghost lg" type="button" data-fire="crash"><i class="dot"></i>Crash the market</button>
+      </div>
+      <p class="precise">Rust fixed-point <em>L3 order book</em> + embedded <em>revm x·y=k</em> pool + <em>Markov-switching Hawkes</em> regimes · 10 ms / 1 s dual-speed barrier · seed 42 → <em>5/5 identical SHA-256</em></p>
+    </div>
+  </div>
+</section>
+
+<!-- 01 -->
+<section class="chapter" id="c1" data-h="190">
+  <div class="stage scrim-l">
+    <div class="head">
+      <h2><span class="ln"><span>A replay can't</span></span><span class="ln"><span>feel your order.</span></span></h2>
+      <p class="lede" data-rv>Most trading AIs are graded on recorded prices, where even a huge order changes nothing. Here it eats through the sell orders and the price moves.</p>
+      <p class="precise">Orders walk <em>price-time FIFO</em> levels in <em>apex-clob</em> (LIMIT, MARKET, POST_ONLY, IOC, cancel-newest STP). Prices and sizes are <em>i64 fixed-point</em>, SCALE = 10⁸. No floats.</p>
+    </div>
+    <div class="inst">
+      <div class="order">
+        <label for="size"><span>Your buy order</span><output id="sizeOut" class="num">12<small>ETH</small></output></label>
+        <input id="size" type="range" min="1" max="45" step="1" value="12" aria-describedby="ladderNote">
+        <div class="row"><button class="btn pri" type="button" id="send">Send it</button><span class="fine" id="ladderNote">Sell-side ladder from the Rust engine: seed 42, tick 300.</span></div>
+      </div>
+      <div class="read r1"><span class="k">In a replay</span><span class="v num">0<small>bps</small></span><span class="s">price never notices</span></div>
+      <div class="read r2"><span class="k">In ApexArena</span><span class="v num up" id="impBps">+0<small>bps</small></span><span class="s" id="impLv">0 of 7 price levels cleared</span></div>
+      <div class="read r3"><span class="k">Average fill</span><span class="v num" id="impAvg">2,142.69</span><span class="s">last price 2,142.31</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- 02 -->
+<section class="chapter" id="c2" data-h="180">
+  <div class="stage scrim-r">
+    <div class="head">
+      <h2><span class="ln"><span>Two venues.</span></span><span class="ln"><span>One coin.</span></span></h2>
+      <p class="lede" data-rv>An exchange-style order book and an on-chain pool both price the same ETH. When they drift apart, agents race to close the gap.</p>
+      <p class="precise">Pool: constant product <em>x · y = k</em>, 30 bps fee, executed in an in-memory <em>revm 19.4</em> EVM (<em>apex-evm</em>). Atomic CLOB ↔ AMM arbitrage pays once the gap clears the fee.</p>
+    </div>
+    <div class="inst">
+      <div class="read r1"><span class="k">Order book</span><span class="v num" id="vClob">2,241.50</span><span class="s">price-time queue</span></div>
+      <div class="read r2"><span class="k">On-chain pool</span><span class="v num pl" id="vPool">2,236.10</span><span class="s">priced by formula</span></div>
+      <div class="read r3"><span class="k">Gap</span><span class="v num" id="vGap">24<small>bps</small></span><span class="s" id="vGapS">inside the fee: no trade</span></div>
+      <p class="fine">Live values are simulated in your browser.</p>
+    </div>
+  </div>
+</section>
+
+<!-- 03 -->
+<section class="chapter" id="c3" data-h="190">
+  <div class="stage scrim-b">
+    <div class="head">
+      <h2><span class="ln"><span>Shocks breed</span></span><span class="ln"><span>shocks.</span></span></h2>
+      <p class="lede" data-rv>The market has four moods. Trigger one and watch it spread down the canyon, the way real panics feed on themselves.</p>
+      <p class="precise">Self-exciting intensity <em>λ(t) = μ + Σ α·e<sup>−β(t−tᵢ)</sup></em> under a Markov-switching regime chain: <em>Calm, ToxicFlow, FlashCrash</em> (350 bps liquidity evaporation), <em>EvmShock</em> (450 ETH whale swap).</p>
+    </div>
+    <div class="inst">
+      <div class="moods" role="group" aria-label="Trigger a market mood">
+        <button type="button" data-fire="calm" aria-pressed="true"><b>Calm</b><span>Orderly quotes</span></button>
+        <button type="button" data-fire="toxic" aria-pressed="false"><b>Toxic flow</b><span>Informed bursts</span></button>
+        <button type="button" data-fire="whale" aria-pressed="false"><b>Whale dump</b><span>450 ETH into the pool</span></button>
+        <button type="button" data-fire="crash" aria-pressed="false"><b>Flash crash</b><span>Liquidity vanishes</span></button>
+      </div>
+      <div class="read r1"><span class="k">Shock intensity</span><span class="v num am" id="vLam">0.20</span><span class="s">λ, events per tick</span></div>
+      <div class="trace"><canvas id="trace" width="600" height="148" role="img" aria-label="Live shock intensity over the last 20 seconds"></canvas></div>
+    </div>
+  </div>
+</section>
+
+<!-- 04 -->
+<section class="chapter" id="c4" data-h="250">
+  <div class="stage scrim-c">
+    <div class="mid">
+      <div class="ticks" id="ticks" aria-hidden="true"></div>
+      <div class="clock"><span>fast clock <b id="tk">000</b> / 100 ticks</span><span class="hold">market held · thinking agents answer</span><span>10 ms each</span></div>
+      <h2>Every second, the market holds still.</h2>
+      <p class="lede">Fast bots act every tick. Thinking models answer once a second, while the clock is stopped, so no one gets to see the future.</p>
+      <p class="precise">Fast loop <em>Δt = 10 ms</em> · macro epoch <em>ΔT = 1 s = 100 ticks</em> · every reasoning agent receives the same <em>MacroDigest</em> in virtual time; no wall clock anywhere in the kernel.</p>
+    </div>
+  </div>
+</section>
+
+<!-- 05 -->
+<section class="chapter" id="c5" data-h="190">
+  <div class="stage scrim-r">
+    <div class="head">
+      <h2><span class="ln"><span>Profit isn't</span></span><span class="ln"><span>the score.</span></span><span class="ln"><span>Survival is.</span></span></h2>
+      <p class="lede" data-rv>Agents are graded on steady, risk-adjusted results. Lose past the margin limit and the score is zero, whatever came before.</p>
+    </div>
+    <div class="board">
+      <table>
+        <caption class="sr">Leaderboard from the Rust engine, flash-crash scenario, seed 42, 300 ticks</caption>
+        <thead><tr><th scope="col">Agent</th><th scope="col" class="hide-s">Profit</th><th scope="col" class="hide-s">Worst drop</th><th scope="col" class="pc">PSR</th><th scope="col" class="pc">Calmar</th><th scope="col" class="pc">Survival</th><th scope="col">Apex score</th></tr></thead>
+        <tbody>
+          <tr><td class="who">Gemini-2.5<small>reasoning agent</small></td><td class="up hide-s">+95 bps</td><td class="hide-s">120 bps</td><td class="pc">0.9999</td><td class="pc">0.9500</td><td class="pc">0.9904</td><td class="acs">0.883</td></tr>
+          <tr><td class="who">DeepSeek-R1<small>reasoning agent</small></td><td class="up hide-s">+40 bps</td><td class="hide-s">10 bps</td><td class="pc">1.0000</td><td class="pc">1.0000</td><td class="pc">0.9034</td><td class="acs">0.881</td></tr>
+          <tr><td class="who">Hawkes-HFT<small>quant algorithm</small></td><td class="dn hide-s">−43 bps</td><td class="hide-s">43 bps</td><td class="pc">0.0000</td><td class="pc">0.2414</td><td class="pc">0.8095</td><td class="acs">0.234</td></tr>
+          <tr class="dead"><td class="who">MM-Alpha<small>liquidated at the 5% margin limit</small></td><td class="hide-s">−470 bps</td><td class="hide-s">915 bps</td><td class="pc">0.0001</td><td class="pc">0.1560</td><td class="pc">0.0000</td><td class="acs">0.000</td></tr>
+        </tbody>
+      </table>
+      <div class="weights" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+      <div class="wl"><span><b>40%</b>Confidence it wasn't luck</span><span><b>30%</b>Drawdown control</span><span><b>20%</b>Stress survival</span><span><b>−10%</b>Churn</span></div>
+      <p class="precise"><em>ACS = 0.40·PSR(0) + 0.30·Calmar<sub>capped</sub> + 0.20·Survival<sub>OOD</sub> − 0.10·Penalty<sub>turnover</sub></em> · 5% maintenance-margin breach → liquidated, ACS = 0</p>
+      <p class="fine">Real engine output: flash-crash scenario, seed 42, 300 ticks. Agents are the arena's built-in entrants.</p>
+    </div>
+  </div>
+</section>
+
+<!-- 06 -->
+<section class="chapter" id="c6" data-h="270">
+  <div class="stage scrim-b">
+    <div class="head">
+      <h2><span class="ln"><span>Five runs.</span></span><span class="ln"><span>One market.</span></span></h2>
+      <p class="lede" data-rv>Start from the same seed and the whole market replays, down to the last bit. Any result can be re-run and checked by anyone.</p>
+    </div>
+    <div class="runs" id="runs" role="img" aria-label="Five runs with seed 42 produce the same SHA-256 state hash"></div>
+  </div>
+</section>
+
+<!-- 07 -->
+<section class="flow scrim-f" id="c7">
+  <h2><span class="ln"><span>Built end to end.</span></span></h2>
+  <div class="stack">
+    <div class="layer" data-rv><span class="w">Engine</span><span class="t">Rust</span><div class="d">The order book, the agents and the scoring. Whole-number maths only, so results never drift.<p class="precise"><em>apex-types · apex-clob · apex-kernel</em> · FixedPrice(i64) / FixedQty(i64), i128 intermediates · BTreeMap state · ChaCha8 RNG</p></div></div>
+    <div class="layer" data-rv><span class="w">Pool</span><span class="t">Rust + EVM</span><div class="d">A real Ethereum virtual machine, embedded in the engine, running the on-chain market.<p class="precise"><em>apex-evm</em> · Bluealloy revm 19.4 + alloy-primitives · x·y=k, 30 bps</p></div></div>
+    <div class="layer" data-rv><span class="w">Agents</span><span class="t">Python</span><div class="d">A Python SDK and a tool server, so any AI model can read the market and trade in it.<p class="precise"><em>apex-py</em> (PyO3) · MCP JSON-RPC 2.0, 7 tools: get_market_digest, get_orderbook_l2, submit_clob_order, execute_evm_swap, trigger_chaos_regime, get_leaderboard, verify_determinism</p></div></div>
+    <div class="layer" data-rv><span class="w">Workstation</span><span class="t">TypeScript</span><div class="d">The live app: trade by hand, inject chaos, read each agent's reasoning, verify the proof.<p class="precise"><em>apps/web-arena</em> · Next.js 15, React 19 · in-browser kernel port in a WebWorker (its digest is FNV-1a; only the Rust kernel is SHA-256)</p></div></div>
+  </div>
+</section>
+
+<!-- 08 -->
+<section class="flow scrim-f" id="c8">
+  <p class="by" data-rv>Designed and built by</p>
+  <p class="name"><span class="ln"><span>Priyanshu Mishra</span></span></p>
+  <div class="links" data-rv>
+    <a href="https://github.com/priyanshu-mishra" rel="noopener">GitHub</a>
+    <!-- TODO(user): replace href with the real LinkedIn profile URL -->
+    <a href="#linkedin-url-todo" data-todo="linkedin">LinkedIn</a><span class="todo">TODO: LinkedIn URL</span>
+    <span class="fine">Rust, Python and TypeScript, end to end.</span>
+  </div>
+</section>
+
+<!-- 09 -->
+<section class="flow scrim-b" id="c9">
+  <h2><span class="ln"><span>Your turn.</span></span></h2>
+  <div class="row" data-rv>
+    <a class="btn pri xl" href="gate.html">Enter the arena</a>
+    <span class="lede">Trade against the agents, crash the market, check the proof. No account needed.</span>
+  </div>
+</section>
+</main>
+<footer><span>ApexArena · MIT · the scene on this page is simulated in your browser; tables and hashes are real engine output</span><span>seed 42</span></footer>
+
+<div class="hud" role="status" aria-live="off">
+  <div>seed <b>42</b></div>
+  <div class="opt2">tick <b id="hTick">001284</b></div>
+  <div>ETH <b id="hPx">2,241.50</b></div>
+  <div class="opt">spread <b id="hSp">4.0</b> bps</div>
+  <div class="opt">λ <b id="hLam">0.20</b></div>
+  <div class="regime" id="hReg"><b>calm</b></div>
+  <div class="sp"></div>
+  <div class="opt">simulated in your browser</div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+<script type="importmap">{"imports":{"three":"https://unpkg.com/three@0.169.0/build/three.module.js"}}</script>
+<script type="module">
+import * as THREE from 'three';
+
+/* ───────────── environment ───────────── */
+const RM = matchMedia('(prefers-reduced-motion: reduce)').matches || new URLSearchParams(location.search).has('rm');
+const MOBILE = Math.min(innerWidth, innerHeight) < 700;
+const $ = (s, r = document) => r.querySelector(s), $$ = (s, r = document) => [...r.querySelectorAll(s)];
+const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));
+const sstep = (a, b, x) => { const t = clamp((x - a) / (b - a)); return t * t * (3 - 2 * t); };
+const lerp = (a, b, t) => a + (b - a) * t;
+const hex = h => new THREE.Vector3(parseInt(h.slice(1, 3), 16) / 255, parseInt(h.slice(3, 5), 16) / 255, parseInt(h.slice(5, 7), 16) / 255);
+const fmt = (n, d = 2) => n.toLocaleString('en-US', { minimumFractionDigits: d, maximumFractionDigits: d });
+gsap.registerPlugin(ScrollTrigger);
+
+/* ───────────── real engine output (apex-tui, flash-crash, seed 42, 300 ticks) ───────────── */
+const REAL = {
+  hash: '4ee5fa377dd4d01d6225c6dd5f4f8f7a2d9cda7db63319e71f3d1c1458725614',
+  mid: 2142.31,
+  asks: [[2142.69, 1.858], [2143.74, 3.10], [2144.93, 6.50], [2146.01, 5.40], [2147.08, 7.80], [2148.15, 10.20], [2149.22, 12.60]],
+  acs: [0.8830, 0.8806, 0.2343, 0.0],
+};
+
+/* ───────────── market model (mirrored in GLSL) ───────────── */
+const SPAN = 24, LEN = 64, W = 7, NL = 14, NEV = 8;
+const ev = Array.from({ length: NEV }, () => new THREE.Vector3(-1e4, 0, 0));
+let evi = 0, T = 30;                         // T: simulation seconds
+const midBase = t => 0.9 * Math.sin(t * 0.13) + 0.5 * Math.sin(t * 0.31 + 1.3) + 0.22 * Math.sin(t * 0.83 + 0.7) + 0.07 * Math.sin(t * 2.1 + 2.0);
+function market(tau) {
+  let cx = midBase(tau), hs = 0.16, sh = 0;
+  for (const e of ev) { const dt = tau - e.x; if (dt > 0 && e.y > 0) {
+    cx += e.z * e.y * 2.6 * (1 - Math.exp(-dt * 5)) * (0.4 + 0.6 * Math.exp(-dt * 0.22));
+    const s = e.y * Math.exp(-dt * 0.55); sh += s; hs += s * 1.5 * (1 - Math.exp(-dt * 9));
+  } }
+  return { cx, hs, sh };
+}
+const lvl = (l, tau, side) => 3.6 * Math.pow(l / NL, 1.3) * (0.85 + 0.15 * Math.sin(tau * 0.55 + side * 1.9 + l * 0.3));
+function fire(mag, dir) { ev[evi].set(T, mag, dir); evi = (evi + 1) % NEV; if (RM) { T += 1.6; needsRender = true; } }
+
+const GLSL_MARKET = /* glsl */`
+uniform float uT, uSpan, uLen, uW, uSplit, uPx, uDpr, uFocus, uAp, uExtent, uDim, uHist, uFace;
+uniform vec3 uEv[${NEV}];
+const float NL = ${NL}.;
+float midBase(float t){ return .9*sin(t*.13)+.5*sin(t*.31+1.3)+.22*sin(t*.83+.7)+.07*sin(t*2.1+2.); }
+void market(float tau, out float cx, out float hs, out float sh){
+  cx = midBase(tau); hs = .16; sh = 0.;
+  for(int i=0;i<${NEV};i++){ float dt = tau-uEv[i].x; float m = uEv[i].y;
+    if(dt>0. && m>0.){ cx += uEv[i].z*m*2.6*(1.-exp(-dt*5.))*(.4+.6*exp(-dt*.22));
+      float s = m*exp(-dt*.55); sh += s; hs += s*1.5*(1.-exp(-dt*9.)); } }
+}
+float lvl(float l, float tau, float side){ return 3.6*pow(l/NL,1.3)*(.85+.15*sin(tau*.55+side*1.9+l*.3)); }
+float evap(float u, float sh){ return clamp(sh,0.,1.)*exp(-u*3.2); }
+`;
+
+/* ───────────── renderer ───────────── */
+const canvas = $('#scene');
+let renderer;
+try {
+  renderer = new THREE.WebGLRenderer({ canvas, antialias: false, alpha: false, powerPreference: 'high-performance' });
+  if (!renderer.capabilities.isWebGL2) throw 0;
+} catch (e) { document.documentElement.classList.add('no-gl'); }
+const GL = !!renderer;
+let DPR = Math.min(devicePixelRatio || 1, MOBILE ? 1.5 : 1.75);
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(36, innerWidth / innerHeight, 0.1, 300);
+const C = { bid: hex('#45E0BC'), ask: hex('#FF5A45'), pool: hex('#6C9CFF'), shock: hex('#FFB020'), bone: hex('#EDEAE3'), grey: hex('#7C8794') };
+const U = {
+  uT: { value: T }, uSpan: { value: SPAN }, uLen: { value: LEN }, uW: { value: W }, uSplit: { value: 0 }, uPx: { value: 1000 }, uDpr: { value: DPR },
+  uFocus: { value: 14 }, uAp: { value: .6 }, uExtent: { value: RM ? 1 : 0 }, uDim: { value: 1 }, uHist: { value: 1 }, uFace: { value: 1 }, uEv: { value: ev },
+  uBid: { value: C.bid }, uAsk: { value: C.ask }, uPool: { value: C.pool }, uShock: { value: C.shock }, uBone: { value: C.bone }, uGrey: { value: C.grey },
+};
+const add = (o, order = 0) => { o.frustumCulled = false; o.renderOrder = order; scene.add(o); return o; };
+const mat = (vs, fs, extra = {}, opts = {}) => new THREE.ShaderMaterial({ uniforms: { ...U, ...extra }, vertexShader: vs, fragmentShader: fs, transparent: true, depthTest: false, depthWrite: false, blending: THREE.AdditiveBlending, ...opts });
+const FS_POINT = /* glsl */`varying vec3 vC; varying float vA; varying float vS;
+void main(){ float r = length(gl_PointCoord-.5)*2.; float a = smoothstep(1., vS, r)*vA; if(a<.004) discard; gl_FragColor = vec4(vC, a); }`;
+const FS_LINE = /* glsl */`varying vec3 vC; varying float vA; void main(){ gl_FragColor = vec4(vC, vA); }`;
+const DOF = /* glsl */`float d = -mv.z; float coc = clamp(abs(d-uFocus)/uFocus*uAp, 0., 1.);`;
+
+if (GL) {
+/* background: horizon light, tinted by regime */
+const bgU = { uHor: { value: .2 }, uHeat: { value: 0 }, uAspect: { value: 1 } };
+add(new THREE.Mesh(new THREE.PlaneGeometry(2, 2), new THREE.ShaderMaterial({ uniforms: bgU, depthTest: false, depthWrite: false,
+  vertexShader: `varying vec2 v; void main(){ v = position.xy; gl_Position = vec4(position.xy, 1., 1.); }`,
+  fragmentShader: /* glsl */`varying vec2 v; uniform float uHor, uHeat, uAspect;
+  void main(){ float dy = v.y-uHor; float band = exp(-dy*dy*(dy>0.?9.:26.));
+    float core = exp(-dy*dy*240.)*exp(-v.x*v.x*1.6);
+    vec3 cold = vec3(.078,.102,.141), hot = vec3(.16,.066,.024);
+    vec3 c = vec3(.0196,.0235,.0314) + mix(cold,hot,uHeat)*band*(.55+.45*exp(-v.x*v.x*1.2)) + mix(vec3(.10,.13,.17),vec3(.34,.15,.04),uHeat)*core;
+    gl_FragColor = vec4(c,1.); }` })), -10);
+
+/* terrain: one point per (price level column × tick row × run copy) */
+{
+  const ROWS = MOBILE ? 64 : 120, COLS = MOBILE ? 30 : 46, COPIES = 5, FILL = MOBILE ? 2500 : 7000;
+  const n = ROWS * COLS * 2 * COPIES + FILL;
+  const aU = new Float32Array(n), aSide = new Float32Array(n), aRow = new Float32Array(n), aRnd = new Float32Array(n), aCopy = new Float32Array(n), aFill = new Float32Array(n);
+  let i = 0, seed = 42; const rnd = () => (seed = (seed * 1664525 + 1013904223) >>> 0) / 4294967296;
+  for (let c = 0; c < COPIES; c++) for (let r = 0; r < ROWS; r++) for (let s = -1; s <= 1; s += 2) for (let j = 0; j < COLS; j++) {
+    aU[i] = (j + .5) / COLS; aSide[i] = s; aRow[i] = (r + c / COPIES) / ROWS; aRnd[i] = rnd(); aCopy[i] = c; i++;
+  }
+  for (let k = 0; k < FILL; k++) { aU[i] = Math.pow(rnd(), .8); aSide[i] = k % 2 ? 1 : -1; aRow[i] = 0; aRnd[i] = rnd(); aCopy[i] = k % COPIES; aFill[i] = 1; i++; }
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.BufferAttribute(new Float32Array(n * 3), 3));
+  for (const [k, a] of Object.entries({ aU, aSide, aRow, aRnd, aCopy, aFill })) g.setAttribute(k, new THREE.BufferAttribute(a, 1));
+  add(new THREE.Points(g, mat(GLSL_MARKET + /* glsl */`
+    attribute float aU, aSide, aRow, aRnd, aCopy, aFill; uniform vec3 uBid, uAsk, uGrey, uShock, uBone;
+    varying vec3 vC; varying float vA; varying float vS;
+    void main(){
+      float age = aFill>.5 ? 0. : fract(aRow + uT/uSpan);
+      float tau = uT - age*uSpan; float cx, hs, sh; market(tau, cx, hs, sh);
+      float l = floor(aU*NL), fr = fract(aU*NL);
+      bool riser = fr<.2 && aFill<.5;
+      float uu = riser ? l/NL : aU;
+      float h0 = lvl(l,tau,aSide), h1 = lvl(l+1.,tau,aSide);
+      float y = riser ? mix(h0,h1,aRnd) : h1;
+      if(aFill>.5) y = h1*aRnd;
+      float e = evap(uu, sh);
+      y *= 1.-.82*e;
+      float lift = e*step(.55,aRnd)*aRnd*3.4;
+      vec3 p = vec3(cx + aSide*(hs+uu*uW) + lift*aSide*.25, y + lift, -age*uLen - (aCopy-2.)*uSplit*4.2);
+      vec4 mv = modelViewMatrix*vec4(p,1.); gl_Position = projectionMatrix*mv;
+      ${DOF}
+      float near = exp(-aU*2.6);
+      vec3 c = mix(uGrey, aSide>0. ? uAsk : uBid, .16+.84*near);
+      c = mix(c, uShock, clamp(sh*1.3,0.,1.)*(.5+.4*near));
+      if(riser) c *= .7;
+      float fade = pow(1.-age,1.9)*step(age,uExtent)*smoothstep(0.,.004,age+aFill);
+      float a = (aFill>.5 ? .4*uFace : .8*uHist)*fade*uDim*(1.-.5*e);
+      
+      float sz = uPx*.036*(.65+.7*aRnd)/d;
+      a *= min(1., sz/(1.3*uDpr)); a /= (1.+coc*coc*30.);
+      gl_PointSize = max(sz, 1.3*uDpr) + coc*14.*uDpr;
+      vC = c; vA = a; vS = mix(.35, .0, coc);
+    }`, FS_POINT)), 1);
+}
+
+/* slices: the "now" face silhouette + one rib per second of history (the 1 s barrier) */
+function sliceGeo(K) {
+  const k = [], ul = [], hl = [], sd = [];
+  for (let r = 0; r < K; r++) for (let s = -1; s <= 1; s += 2) {
+    const pts = [[0, 0]]; for (let l = 0; l < NL; l++) { pts.push([l, l + 1]); pts.push([l + 1, l + 1]); }
+    for (let q = 0; q < pts.length - 1; q++) for (const p of [pts[q], pts[q + 1]]) { k.push(r); ul.push(p[0]); hl.push(p[1]); sd.push(s); }
+  }
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.BufferAttribute(new Float32Array(k.length * 3), 3));
+  g.setAttribute('aK', new THREE.Float32BufferAttribute(k, 1)); g.setAttribute('aUL', new THREE.Float32BufferAttribute(ul, 1));
+  g.setAttribute('aHL', new THREE.Float32BufferAttribute(hl, 1)); g.setAttribute('aSide', new THREE.Float32BufferAttribute(sd, 1));
+  return g;
+}
+const VS_SLICE = GLSL_MARKET + /* glsl */`
+  attribute float aK, aUL, aHL, aSide; uniform float uNow, uCopy, uAlpha; uniform vec3 uBid, uAsk, uBone, uShock;
+  varying vec3 vC; varying float vA;
+  void main(){
+    float age = uNow>.5 ? 0. : (fract(uT)+aK)/uSpan; float tau = uT-age*uSpan;
+    float cx, hs, sh; market(tau, cx, hs, sh);
+    float u = aUL/NL; float h = aHL<.5 ? 0. : lvl(aHL,tau,aSide); h *= 1.-.82*evap(u,sh);
+    vec3 p = vec3(cx+aSide*(hs+u*uW), h, -age*uLen-(uCopy-2.)*uSplit*4.2);
+    gl_Position = projectionMatrix*modelViewMatrix*vec4(p,1.);
+    vC = mix(mix(uBone, aSide>0. ? uAsk : uBid, uNow>.5 ? .75 : .35), uShock, clamp(sh,0.,1.)*.6);
+    vA = uAlpha*pow(1.-age,1.6)*step(age,uExtent)*(uNow>.5 ? max(uDim,.6) : uDim*uHist*(1.-uSplit));
+  }`;
+const ribU = { uNow: { value: 0 }, uCopy: { value: 2 }, uAlpha: { value: .2 } };
+add(new THREE.LineSegments(sliceGeo(SPAN), mat(VS_SLICE, FS_LINE, ribU)), 2);
+const nowGeo = sliceGeo(1);
+for (let c = 0; c < 5; c++) add(new THREE.LineSegments(nowGeo, mat(VS_SLICE, FS_LINE, { uNow: { value: 1 }, uCopy: { value: c }, uAlpha: { value: c === 2 ? 1 : .8 } })), 3);
+
+/* price thread + best bid / best ask along the floor */
+{
+  const N = 420, a = new Float32Array(N); for (let i = 0; i < N; i++) a[i] = Math.pow(i / (N - 1), 1.6);
+  const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(new Float32Array(N * 3), 3)); g.setAttribute('aAge', new THREE.BufferAttribute(a, 1));
+  const vs = pt => GLSL_MARKET + /* glsl */`
+    attribute float aAge; uniform float uOff, uCopy, uAlpha; uniform vec3 uCol, uShock; varying vec3 vC; varying float vA; varying float vS;
+    void main(){ float tau = uT-aAge*uSpan; float cx, hs, sh; market(tau, cx, hs, sh);
+      vec3 p = vec3(cx+uOff*hs, .02, -aAge*uLen-(uCopy-2.)*uSplit*4.2);
+      vec4 mv = modelViewMatrix*vec4(p,1.); gl_Position = projectionMatrix*mv;
+      vC = mix(uCol, uShock, clamp(sh,0.,1.)*.7); vA = uAlpha*pow(1.-aAge,1.2)*step(aAge,uExtent)*min(uDim,1.)*mix(1.,min(uHist,1.),smoothstep(0.,.06,aAge)); vS = .2;
+      ${pt ? 'gl_PointSize = max(uPx*.05/(-mv.z), 1.6*uDpr);' : ''} }`;
+  for (let c = 0; c < 5; c++) {
+    add(new THREE.Line(g, mat(vs(0), FS_LINE, { uOff: { value: 0 }, uCopy: { value: c }, uAlpha: { value: .9 }, uCol: { value: C.bone } })), 4);
+    add(new THREE.Points(g, mat(vs(1), FS_POINT, { uOff: { value: 0 }, uCopy: { value: c }, uAlpha: { value: .5 }, uCol: { value: C.bone } })), 4);
+  }
+  add(new THREE.Line(g, mat(vs(0), FS_LINE, { uOff: { value: -1 }, uCopy: { value: 2 }, uAlpha: { value: .55 }, uCol: { value: C.bid } })), 4);
+  add(new THREE.Line(g, mat(vs(0), FS_LINE, { uOff: { value: 1 }, uCopy: { value: 2 }, uAlpha: { value: .55 }, uCol: { value: C.ask } })), 4);
+}
+
+/* floor grid: fixed price lines running into the past */
+{
+  const p = [], a = [];
+  for (let x = -12; x <= 12; x += 1.5) { p.push(x, 0, 0, x, 0, -LEN); a.push(0, 1); }
+  for (let z = 0; z >= -LEN; z -= 4) { p.push(-12, 0, z, 12, 0, z); a.push(-z / LEN, -z / LEN); }
+  const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(p, 3)); g.setAttribute('aAge', new THREE.Float32BufferAttribute(a, 1));
+  add(new THREE.LineSegments(g, mat(`attribute float aAge; uniform float uExtent, uDim, uSplit; varying vec3 vC; varying float vA;
+    void main(){ gl_Position = projectionMatrix*modelViewMatrix*vec4(position,1.); vC = vec3(.93,.92,.89); vA = .075*pow(1.-aAge,1.4)*uExtent*(1.-uSplit); }`, FS_LINE)), 0);
+}
+}
+
+/* ───────────── agents, venues, graph ───────────── */
+const AG = [
+  { name: 'Gemini-2.5', kind: 'reasoning', pk: 'AiReasoning', llm: 1, hero: [-5.2, 4.6, 1.8], score: [-1.6, 0, 3] },
+  { name: 'DeepSeek-R1', kind: 'reasoning', pk: 'AiReasoning', llm: 1, hero: [4.3, 5.0, 1.2], score: [0.5, 0, 3] },
+  { name: 'Hawkes-HFT', kind: 'quant', pk: 'QuantAlgo', llm: 0, hero: [1.6, 3.2, 2.6], score: [2.6, 0, 3] },
+  { name: 'MM-Alpha', kind: 'quant', pk: 'QuantAlgo', llm: 0, hero: [-2.2, 3.6, 2.2], score: [4.7, 0, 3] },
+  { name: 'You', kind: 'by hand', pk: 'manual desk', llm: 0, hero: [5.6, 3.3, 2.8], score: [7.2, 1.0, 3] },
+];
+AG.forEach((a, i) => { a.score[1] = i < 4 ? 0.3 + REAL.acs[i] * 5.4 : a.score[1]; a.p = new THREE.Vector3(); a.pulse = 0; });
+const POOL_O = new THREE.Vector3(8.0, 0, -5), POOL_S = 1.6;
+const bead = new THREE.Vector3(); let beadR = 1;
+const agentPos = Array.from({ length: 6 }, () => new THREE.Vector3());
+const OU = { uAgentPos: { value: agentPos }, uArb: { value: 0 }, uArbSide: { value: 1 }, uOrders: { value: 1 }, uBeadR: { value: 1 }, uPoolA: { value: 1 }, uScore: { value: 0 } };
+let nodeGeo, tetherGeo, stemGeo, slug;
+if (GL) {
+/* orders in flight: agent → resting place on the "now" face. Agent 5 = arbitrage stream from the pool */
+{
+  const N = MOBILE ? 150 : 300, TR = 3, n = N * TR + 60 * TR;
+  const f = k => new Float32Array(n), aAgent = f(), aSide = f(), aU = f(), aPhase = f(), aSpeed = f(), aTrail = f();
+  let i = 0;
+  for (let k = 0; k < N + 60; k++) { const arb = k >= N; const ag = arb ? 5 : [0, 1, 2, 2, 2, 3, 3, 3, 2, 4][k % 10];
+    const side = Math.random() < .5 ? -1 : 1, u = arb ? 0 : Math.pow(Math.random(), 2.2) * .8, ph = Math.random(), sp = (arb ? .5 : .16) + Math.random() * .22;
+    for (let t = 0; t < TR; t++) { aAgent[i] = ag; aSide[i] = side; aU[i] = u; aPhase[i] = ph; aSpeed[i] = sp; aTrail[i] = t; i++; } }
+  const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(new Float32Array(n * 3), 3));
+  for (const [k, a] of Object.entries({ aAgent, aSide, aU, aPhase, aSpeed, aTrail })) g.setAttribute(k, new THREE.BufferAttribute(a, 1));
+  add(new THREE.Points(g, mat(GLSL_MARKET + /* glsl */`
+    attribute float aAgent, aSide, aU, aPhase, aSpeed, aTrail; uniform vec3 uAgentPos[6]; uniform float uArb, uArbSide, uOrders, uScore; uniform vec3 uBid, uAsk, uPool;
+    varying vec3 vC; varying float vA; varying float vS;
+    void main(){
+      float s = fract(aPhase+uT*aSpeed) - aTrail*.016; float vis = step(0., s);
+      vec3 A = uAgentPos[0]; for(int i=1;i<6;i++){ if(aAgent>float(i)-.5) A = uAgentPos[i]; }
+      bool arb = aAgent>4.5; float side = arb ? uArbSide : aSide; float u = arb ? 0. : aU;
+      float cx, hs, sh; market(uT, cx, hs, sh);
+      float h = arb ? .1 : lvl(floor(u*NL)+1., uT, side)*(1.-.82*evap(u,sh));
+      vec3 B = vec3(cx+side*(hs+u*uW), h, 0.);
+      vec3 Cc = mix(A,B,.5)+vec3(0., arb ? 2.2 : 1.3, arb ? 1.5 : .7);
+      vec3 p = mix(mix(A,Cc,s), mix(Cc,B,s), s);
+      vec4 mv = modelViewMatrix*vec4(p,1.); gl_Position = projectionMatrix*mv;
+      ${DOF}
+      vC = arb ? uPool : (side>0. ? uAsk : uBid);
+      float hit = smoothstep(.9,1.,s)*(1.-aTrail*.5);
+      vA = vis*smoothstep(0.,.12,s)*(1.-aTrail*.3)*(arb ? uArb : uOrders*(1.-uScore))*(.55+hit*.9)*uExtent/(1.+coc*coc*10.);
+      gl_PointSize = max(uPx*(.055+hit*.07)/d, 1.6*uDpr)+coc*8.*uDpr; vS = .1;
+    }`, FS_POINT, OU)), 6);
+}
+/* on-chain pool: the curve x·y=k as a ribbon of points; the bead is the current reserves */
+{
+  const N = MOBILE ? 900 : 2200, pos = new Float32Array(N * 3), aR = new Float32Array(N), aRnd = new Float32Array(N);
+  for (let i = 0; i < N; i++) { const r = .34 * Math.pow(3.0 / .34, (i % 110) / 109), row = Math.floor(i / 110);
+    pos[i * 3] = POOL_O.x + r * POOL_S; pos[i * 3 + 1] = POOL_S / r; pos[i * 3 + 2] = POOL_O.z + (row / 19 - .5) * 2.2; aR[i] = r; aRnd[i] = Math.random(); }
+  const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(pos, 3)); g.setAttribute('aR', new THREE.BufferAttribute(aR, 1)); g.setAttribute('aRnd', new THREE.BufferAttribute(aRnd, 1));
+  add(new THREE.Points(g, mat(/* glsl */`uniform float uPx, uDpr, uFocus, uAp, uExtent, uBeadR, uPoolA; uniform vec3 uPool, uBone; attribute float aR, aRnd;
+    varying vec3 vC; varying float vA; varying float vS;
+    void main(){ vec4 mv = modelViewMatrix*vec4(position,1.); gl_Position = projectionMatrix*mv; ${DOF}
+      float near = exp(-abs(aR-uBeadR)*5.); vC = mix(uPool, uBone, near*.7);
+      vA = (.3+near*.7)*min(uPoolA,1.6)*uExtent/(1.+coc*coc*20.);
+      float sz = uPx*.034*(.7+.6*aRnd)/d; vA *= min(1., sz/(1.3*uDpr)); gl_PointSize = max(sz,1.3*uDpr)+coc*12.*uDpr; vS = mix(.3,0.,coc); }`, FS_POINT, OU)), 5);
+  const ax = [POOL_O.x, 0, POOL_O.z, POOL_O.x + 5.8, 0, POOL_O.z, POOL_O.x, 0, POOL_O.z, POOL_O.x, 5.8, POOL_O.z];
+  const ag = new THREE.BufferGeometry(); ag.setAttribute('position', new THREE.Float32BufferAttribute(ax, 3));
+  add(new THREE.LineSegments(ag, mat(`uniform float uPoolA, uExtent; varying vec3 vC; varying float vA; void main(){ gl_Position = projectionMatrix*modelViewMatrix*vec4(position,1.); vC = vec3(.42,.61,1.); vA = .4*min(uPoolA,1.)*uExtent; }`, FS_LINE, OU)), 5);
+}
+/* agent nodes (+ pool bead + the visitor's order slug) */
+{
+  const n = 7; nodeGeo = new THREE.BufferGeometry();
+  nodeGeo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(n * 3), 3));
+  nodeGeo.setAttribute('aKind', new THREE.BufferAttribute(new Float32Array([1, 1, 0, 0, 0, 2, 3]), 1));
+  nodeGeo.setAttribute('aPulse', new THREE.BufferAttribute(new Float32Array(n), 1));
+  nodeGeo.setAttribute('aLife', new THREE.BufferAttribute(new Float32Array([1, 1, 1, 1, 1, 1, 0]), 1));
+  add(new THREE.Points(nodeGeo, mat(/* glsl */`uniform float uPx, uDpr, uExtent; attribute float aKind, aPulse, aLife; varying float vK, vP, vL;
+    void main(){ vec4 mv = modelViewMatrix*vec4(position,1.); gl_Position = projectionMatrix*mv; vK = aKind; vP = aPulse; vL = aLife*uExtent;
+      gl_PointSize = clamp(uPx*(aKind>2.5 ? .4 : .62)*(1.+aPulse*.35)/(-mv.z), 12.*uDpr, 72.*uDpr); }`,
+    /* glsl */`uniform vec3 uBone, uPool, uAsk, uBid, uShock; varying float vK, vP, vL;
+    void main(){ float r = length(gl_PointCoord-.5)*2.; if(r>1.) discard;
+      vec3 c = vK>2.5 ? uBid : vK>1.5 ? uPool : uBone; if(vL<0.) c = uAsk;
+      float core = smoothstep(.24,.15,r);
+      float ring = vK>.5 && vK<1.5 ? smoothstep(.06,.0,abs(r-.6))*(.5+vP) : 0.;
+      float ring2 = smoothstep(.04,.0,abs(r-(.3+vP*.6)))*vP;
+      float halo = exp(-r*r*6.)*.22*(1.+vP*1.5);
+      float a = (core+ring+ring2+halo)*abs(vL)*smoothstep(1.,.85,r);
+      gl_FragColor = vec4(c, a); }`, OU)), 8);
+}
+/* graph edges: every agent is wired to both venues. CPU-updated, vertex colour = intensity */
+{
+  const SEG = 14, n = 5 * (SEG + SEG) * 2;
+  tetherGeo = new THREE.BufferGeometry();
+  tetherGeo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(n * 3), 3));
+  tetherGeo.setAttribute('color', new THREE.BufferAttribute(new Float32Array(n * 3), 3));
+  tetherGeo.userData.SEG = SEG;
+  add(new THREE.LineSegments(tetherGeo, new THREE.LineBasicMaterial({ vertexColors: true, transparent: true, blending: THREE.AdditiveBlending, depthTest: false, depthWrite: false, toneMapped: false })), 5);
+  stemGeo = new THREE.BufferGeometry();
+  stemGeo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(4 * 2 * 3), 3));
+  stemGeo.setAttribute('color', new THREE.BufferAttribute(new Float32Array(4 * 2 * 3), 3));
+  add(new THREE.LineSegments(stemGeo, new THREE.LineBasicMaterial({ vertexColors: true, transparent: true, blending: THREE.AdditiveBlending, depthTest: false, depthWrite: false, toneMapped: false })), 5);
+}
+}
+slug = { p: new THREE.Vector3(), life: 0, k: 0 };
+
+/* ───────────── chapter states: the same scene, re-staged ───────────── */
+const A = innerWidth / innerHeight < .8;   // portrait
+const ST = [
+  /* 00 canyon      */ { pos: [-1.2, 5.2, 17.5], tgt: [1.2, -.6, -12], fov: 34, focus: 17, ap: .5, split: 0, dim: 1, hist: 1, face: 1, agents: 1, score: 0, pool: .9, orders: 1 },
+  /* 01 depth chart */ { pos: [0.4, 2.6, 19], tgt: [0.4, 2.35, 0], fov: 30, focus: 19, ap: 1.0, split: 0, dim: 1, hist: .1, face: 2.4, agents: 1, follow: 1, score: 0, pool: 0, orders: .4 },
+  /* 02 two venues  */ { pos: [3.4, 4.0, 23], tgt: [3.4, 2.9, -4], fov: 32, focus: 24, ap: .6, split: 0, dim: 1, hist: .35, face: 1.6, agents: 1, follow: .6, score: 0, pool: 1.5, orders: .8 },
+  /* 03 chaos       */ { pos: [10, 7.5, 13], tgt: [-1.5, 2.2, -14], fov: 36, focus: 22, ap: .4, split: 0, dim: 1.15, hist: 1.25, face: .8, agents: 0, score: 0, pool: .4, orders: 1 },
+  /* 04 barrier     */ { pos: [5.2, 2.3, 7.2], tgt: [-1.2, 2.7, 0], fov: 32, focus: 6.5, ap: 1.1, split: 0, dim: .8, hist: 1, face: 1, agents: 1, score: 0, pool: 0, orders: 1 },
+  /* 05 score       */ { pos: [5.5, 3.0, 24], tgt: [5.5, 4.6, 3], fov: 36, focus: 21, ap: 1.2, split: 0, dim: .3, hist: .3, face: .5, agents: 1, score: 1, pool: 0, orders: 0 },
+  /* 06 proof       */ { pos: [-19, 6.5, 17], tgt: [3.6, -1.0, -3], fov: 30, focus: 26, ap: .25, split: 1, dim: 1, hist: .1, face: 2.6, agents: 0, score: 0, pool: 0, orders: 0 },
+  /* 07 the run     */ { pos: [-4, 15, 22], tgt: [3, 0, -22], fov: 34, focus: 34, ap: .3, split: 0, dim: .75, hist: 1, face: .6, agents: 0, score: 0, pool: .4, orders: .5 },
+  /* 08 credit      */ { pos: [-2, 10, 20], tgt: [3, 0, -22], fov: 34, focus: 30, ap: .4, split: 0, dim: .7, hist: 1, face: .6, agents: 0, score: 0, pool: .4, orders: .5 },
+  /* 09 flight      */ { pos: [0, 1.5, 6.5], tgt: [0, 1.2, -30], fov: 52, focus: 10, ap: .5, split: 0, dim: 1.1, hist: 1, face: 1, agents: 1, score: 0, pool: .3, orders: 1 },
+];
+if (A) { // portrait: pull back and re-centre so the subject stays in the middle band of the phone
+  const m = [[0, 7, 32, 0, -0.8, -10, 46], [0, 3, 34, 0, 3.4, 0, 44], [5, 5, 40, 5, 4.5, -4, 46], [9, 12, 22, 0, 4, -14, 48], [4.5, 2.6, 13, -1, 3.4, 0, 46], [1.5, 5, 30, 1.5, 6.5, 3, 46], [-26, 12, 44, 3, 4, -10, 46], [-4, 18, 30, 0, 4, -22, 46], [-2, 12, 28, 0, 4, -22, 46], [0, 1.6, 8, 0, 1.6, -30, 62]];
+  m.forEach((v, i) => { ST[i].pos = v.slice(0, 3); ST[i].tgt = v.slice(3, 6); ST[i].fov = v[6]; });
+  ST[5].agents = 0; ST[5].score = 0; ST[5].dim = .5; ST[1].agents = 0; ST[2].agents = 0;
+}
+ST.forEach(o => { o.follow = o.follow || 0; });
+const cur = { pos: new THREE.Vector3(...ST[0].pos), tgt: new THREE.Vector3(...ST[0].tgt), ...Object.fromEntries(['fov', 'focus', 'ap', 'split', 'dim', 'hist', 'face', 'agents', 'follow', 'score', 'pool', 'orders'].map(k => [k, ST[0][k]])) };
+const want = { pos: new THREE.Vector3(), tgt: new THREE.Vector3() };
+const chapters = $$('main > section');
+let chIdx = 0, chBlend = 0;
+const prog = chapters.map(() => 0);        // progress through each sticky chapter (0..1)
+chapters.forEach((el, i) => {
+  if (el.dataset.h) el.style.height = (A && +el.dataset.h > 100 ? +el.dataset.h + 20 : el.dataset.h) + 'vh';
+  ScrollTrigger.create({ trigger: el, start: 'top top', end: 'bottom bottom', onUpdate: s => { prog[i] = s.progress; needsRender = true; } });
+});
+function readScroll() {
+  const vh = innerHeight; chIdx = 0; chBlend = 1;
+  for (let i = chapters.length - 1; i >= 0; i--) { const top = chapters[i].getBoundingClientRect().top; if (top < vh) { chIdx = i; chBlend = i === 0 ? 1 : clamp((vh - top) / vh); break; } }
+}
+
+/* ───────────── labels projected from the scene ───────────── */
+const labels = $('#labels'), tags = [];
+function tag(html, cls, pos, vis) { const el = document.createElement('div'); el.className = 'tag ' + (cls || ''); el.innerHTML = html; labels.appendChild(el); const t = { el, pos, vis, o: 0 }; tags.push(t); return t; }
+const precise = () => document.documentElement.dataset.depth === 'precise';
+AG.forEach((a, i) => { a.tag = tag('', i === 0 || i === 3 ? 'left' : '', () => a.p, c => (c === 5 && i === 4) ? 0 : ST[c].agents > .9 ? 1 : 0); });
+function agentLabels() { AG.forEach(a => { a.tag.el.innerHTML = `${a.name}<i>${precise() ? a.pk : a.kind}</i>`; }); }
+agentLabels();
+const nowTop = (u, side) => { const m = market(T); return new THREE.Vector3(m.cx + side * (m.hs + u * W), lvl(Math.floor(u * NL) + 1, T, side) * (1 - .82 * clamp(m.sh) * Math.exp(-u * 3.2)), 0); };
+const tBid = tag('', 'note bid left', () => nowTop(.5, -1), c => c <= 1 ? 1 : 0);
+const tAsk = tag('', 'note ask', () => nowTop(.64, 1), c => c <= 1 ? 1 : 0);
+const tPx = tag('', 'note', () => { const m = market(T - 2.2); return new THREE.Vector3(m.cx, .0, -2.2 / SPAN * LEN); }, c => c <= 1 ? 1 : 0);
+const tPast = tag('', 'note', () => { const m = market(T - 8); return new THREE.Vector3(m.cx + m.hs + 1.2, 0, -8 / SPAN * LEN); }, c => c === 0 || c === 3 ? 1 : 0);
+const tPool = tag('', 'note pool', () => new THREE.Vector3(POOL_O.x + 1.2, 4.6, POOL_O.z), c => c === 0 || c === 2 ? 1 : 0);
+const tBead = tag('', 'note', () => bead, c => c === 2 ? 1 : 0);
+const tRuns = [0, 1, 2, 3, 4].map(c => tag(`run ${c + 1}`, 'note left', () => { const m = market(T); return new THREE.Vector3(m.cx - m.hs - W, lvl(NL, T, -1), -(c - 2) * U.uSplit.value * 4.2); }, ch => ch === 6 ? U.uSplit.value : 0));
+function noteLabels() { const p = precise();
+  tBid.el.textContent = p ? 'bid depth · L3 price-time FIFO' : 'buy orders waiting';
+  tAsk.el.textContent = p ? 'ask depth · 14 price levels shown' : 'sell orders waiting';
+  tPx.el.textContent = p ? 'mid · between best bid and best ask' : 'the price';
+  tPast.el.textContent = p ? 't − 8 s · one rib per 1 s macro epoch' : '8 seconds ago';
+  tPool.el.textContent = p ? 'AMM · x·y = k · revm' : 'on-chain pool';
+  tBead.el.textContent = p ? 'reserves (x, y)' : 'pool price';
+}
+noteLabels();
+const v3 = new THREE.Vector3();
+function placeTags() {
+  const w = innerWidth, h = innerHeight;
+  for (const t of tags) {
+    const target = t.vis(chIdx) * (chBlend > .55 || chIdx === 0 ? 1 : 0) * U.uExtent.value;
+    t.o += (target - t.o) * (RM ? 1 : .12);
+    if (t.o < .01) { t.el.style.opacity = 0; continue; }
+    v3.copy(t.pos()).project(camera);
+    if (v3.z > 1 || Math.abs(v3.x) > 1.05 || Math.abs(v3.y) > 1.05) { t.el.style.opacity = 0; continue; }
+    const x = (v3.x * .5 + .5) * w, y = (-v3.y * .5 + .5) * h, left = t.el.classList.contains('left');
+    t.el.style.opacity = t.o;
+    t.el.style.transform = `translate3d(${left ? x - t.el.offsetWidth - 8 : x + 8}px,${y - 7}px,0)`;
+  }
+}
+
+/* ───────────── interactions ───────────── */
+let regime = 'calm', regimeUntil = 0, whaleT = -1e4, timers = [], userActed = false;
+const later = (ms, fn) => { const id = setTimeout(fn, RM ? 0 : ms); timers.push(id); };
+function setRegime(name, secs) { regime = name; regimeUntil = T + secs; }
+function trigger(kind, fromUser = true) {
+  if (fromUser) userActed = true;
+  timers.forEach(clearTimeout); timers = [];
+  $$('.moods button').forEach(b => b.setAttribute('aria-pressed', b.dataset.fire === kind));
+  if (kind === 'calm') { setRegime('calm', 0); }
+  if (kind === 'crash') { setRegime('flash crash', 9); fire(1.0, -1); later(900, () => fire(.45, -1)); later(2100, () => fire(.3, 1)); later(3600, () => fire(.22, -1)); }
+  if (kind === 'toxic') { setRegime('toxic flow', 8); [0, 500, 1100, 1500, 2300, 3200].forEach((ms, i) => later(ms, () => fire(.16 + .1 * ((i * 7) % 3) / 2, i % 3 === 1 ? 1 : -1))); }
+  if (kind === 'whale') { setRegime('whale dump', 8); whaleT = T; later(700, () => fire(.5, -1)); later(1900, () => fire(.2, -1)); }
+}
+$$('[data-fire]').forEach(b => b.addEventListener('click', () => trigger(b.dataset.fire)));
+
+/* impact: walk the real ladder */
+const size = $('#size');
+function impact() {
+  let q = +size.value, cost = 0, last = REAL.asks[0][0], lv = 0, left = q;
+  for (const [px, sz] of REAL.asks) { if (left <= 0) break; const take = Math.min(left, sz); cost += take * px; left -= take; last = px; if (take >= sz - 1e-9) lv++; }
+  const avg = cost / (q - left), bps = (last - REAL.mid) / REAL.mid * 1e4;
+  $('#sizeOut').innerHTML = `${q}<small>ETH</small>`;
+  $('#impBps').innerHTML = `+${fmt(bps, 1)}<small>bps</small>`;
+  $('#impLv').textContent = `${lv} of 7 price levels cleared`;
+  $('#impAvg').textContent = fmt(avg, 2);
+  return q / 45;
+}
+size.addEventListener('input', impact); impact();
+function sendOrder() {
+  userActed = true; const f = impact();
+  const from = AG[4].p.clone(), to = nowTop(.02, 1);
+  if (RM) { fire(.12 + f * .5, 1); return; }
+  slug.life = 1; gsap.fromTo(slug, { k: 0 }, { k: 1, duration: .55, ease: 'power2.in', onUpdate: () => { slug.p.lerpVectors(from, to, slug.k); slug.p.y += Math.sin(slug.k * Math.PI) * 1.2; },
+    onComplete: () => { slug.life = 0; fire(.12 + f * .5, 1); AG[4].pulse = 1; } });
+}
+$('#send').addEventListener('click', sendOrder); size.addEventListener('change', sendOrder);
+
+/* plain / precise */
+$$('.depth button').forEach(b => b.addEventListener('click', () => {
+  document.documentElement.dataset.depth = b.dataset.set;
+  $$('.depth button').forEach(x => x.setAttribute('aria-pressed', x === b));
+  agentLabels(); noteLabels(); needsRender = true; ScrollTrigger.refresh();
+  try { localStorage.setItem('apex-depth', b.dataset.set); } catch (e) {}
+}));
+try { if (localStorage.getItem('apex-depth') === 'precise' || new URLSearchParams(location.search).has('precise')) $('.depth [data-set=precise]').click(); } catch (e) {}
+
+/* barrier ticks + proof runs */
+const ticksEl = $('#ticks'); ticksEl.innerHTML = '<i></i>'.repeat(100); const tickEls = [...ticksEl.children];
+const runsEl = $('#runs');
+runsEl.innerHTML = [1, 2, 3, 4, 5].map(i => `<div class="run"><span class="n">run ${i}</span><span class="h">${REAL.hash}</span><span class="ok">match</span></div>`).join('') +
+  `<div class="verdict"><span class="big num">0 / 5 identical</span><p class="precise"><em>SHA-256</em> of the full kernel state after 300 ticks, seed 42. Output of <em>apex-tui --verify-determinism</em>; gate: <em>./scripts/verify_determinism_hook.sh</em>. No floats, no hash maps, no wall clock.</p><a class="btn ghost" href="gate.html">Verify it yourself in the app</a></div>`;
+const runEls = $$('.run', runsEl), verdict = $('.verdict', runsEl);
+let lastTicks = -1, lastRuns = -1;
+
+/* λ trace */
+const trace = $('#trace'), tctx = trace.getContext('2d'), lamBuf = new Float32Array(240).fill(.2); let lamAcc = 0;
+function drawTrace() {
+  const w = trace.width, h = trace.height; tctx.clearRect(0, 0, w, h);
+  tctx.strokeStyle = 'rgba(237,234,227,.22)'; tctx.lineWidth = 1; tctx.beginPath(); tctx.moveTo(0, h - 8.5); tctx.lineTo(w, h - 8.5); tctx.stroke();
+  tctx.beginPath(); for (let i = 0; i < 240; i++) { const x = i / 239 * w, y = h - 8 - Math.min(lamBuf[i], 3.2) / 3.2 * (h - 16); i ? tctx.lineTo(x, y) : tctx.moveTo(x, y); }
+  tctx.strokeStyle = '#FFB020'; tctx.lineWidth = 2.5; tctx.stroke();
+  tctx.lineTo(w, h - 8); tctx.lineTo(0, h - 8); tctx.closePath(); tctx.fillStyle = 'rgba(255,176,32,.10)'; tctx.fill();
+}
+
+/* ───────────── HUD ───────────── */
+const H = { tick: $('#hTick'), px: $('#hPx'), sp: $('#hSp'), lam: $('#hLam'), reg: $('#hReg'), clob: $('#vClob'), pool: $('#vPool'), gap: $('#vGap'), gapS: $('#vGapS'), vlam: $('#vLam'), tk: $('#tk') };
+let hudAcc = 1, heat = 0, lam = .2, gapBps = 0;
+function sim() {
+  const m = market(T);
+  lam = .2; for (const e of ev) { const dt = T - e.x; if (dt > 0 && e.y > 0) lam += e.y * 2.3 * Math.exp(-dt * .55); }
+  const clob = 2241.5 + m.cx * 14;
+  const wdt = T - whaleT, whale = wdt > 0 ? -.021 * Math.exp(-wdt * .45) : 0;
+  const pool = clob * (1 + .0021 * Math.sin(T * .37) + .0015 * Math.sin(T * .91 + 2) + whale);
+  gapBps = (pool - clob) / clob * 1e4;
+  beadR = clamp(1 - (pool / clob - 1) * 60, .45, 2.6);
+  return { m, clob, pool };
+}
+function hud(s) {
+  H.tick.textContent = String(Math.floor(T * 100) % 1000000).padStart(6, '0');
+  H.px.textContent = fmt(s.clob); H.sp.textContent = fmt(4 + 40 * clamp(s.m.sh), 1); H.lam.textContent = fmt(lam);
+  const r = T < regimeUntil ? regime : (lam > .6 ? 'unsettled' : 'calm');
+  H.reg.firstElementChild.textContent = r; H.reg.classList.toggle('hot', r !== 'calm');
+  H.clob.textContent = fmt(s.clob); H.pool.textContent = fmt(s.pool);
+  H.gap.innerHTML = `${gapBps > 0 ? '+' : '−'}${fmt(Math.abs(gapBps), 0)}<small>bps</small>`;
+  const open = Math.abs(gapBps) > 30; H.gap.className = 'v num' + (open ? ' am' : ''); H.gapS.textContent = open ? 'wider than the fee: agents trade it' : 'inside the fee: no trade';
+  H.vlam.textContent = fmt(lam);
+  if (r === 'calm' && T > regimeUntil + 1) $$('.moods button').forEach(b => b.setAttribute('aria-pressed', b.dataset.fire === 'calm'));
+}
+
+/* ───────────── frame ───────────── */
+let needsRender = true, last = performance.now(), timeScale = 1, epoch = Math.floor(T), ptr = { x: 0, y: 0, sx: 0, sy: 0 };
+addEventListener('pointermove', e => { ptr.x = e.clientX / innerWidth - .5; ptr.y = e.clientY / innerHeight - .5; }, { passive: true });
+function resize() {
+  DPR = Math.min(devicePixelRatio || 1, MOBILE ? 1.5 : 1.75); U.uDpr.value = DPR;
+  if (GL) { renderer.setPixelRatio(DPR); renderer.setSize(innerWidth, innerHeight, false); }
+  camera.aspect = innerWidth / innerHeight; needsRender = true;
+}
+addEventListener('resize', resize); resize();
+addEventListener('scroll', () => { needsRender = true; }, { passive: true });
+
+function frame(now) {
+  requestAnimationFrame(frame);
+  const dt = Math.min(.05, (now - last) / 1000); last = now;
+  if (document.hidden) return;
+  if (RM && !needsRender) return;
+  needsRender = false;
+  readScroll();
+
+  /* chapter-local behaviour */
+  const p4 = prog[4], p6 = prog[6];
+  const in4 = chIdx === 4 && chBlend > .98;
+  const ticksOn = in4 ? Math.round(clamp(p4 / .42) * 100) : 0;
+  const held = in4 && p4 >= .42 && p4 < .86;
+  timeScale += ((held ? 0 : in4 ? lerp(1, .12, sstep(.1, .42, p4)) : 1) - timeScale) * (RM ? 1 : .18);
+  if (ticksOn !== lastTicks) { lastTicks = ticksOn; tickEls.forEach((el, i) => el.classList.toggle('on', i < ticksOn)); H.tk.textContent = String(ticksOn).padStart(3, '0'); chapters[4].classList.toggle('held', held); if (held) AG.forEach(a => { if (a.llm) a.pulse = 1; }); }
+  chapters[4].classList.toggle('held', held);
+  const runsOn = chIdx === 6 ? Math.floor(clamp((p6 - .06) / .5) * 5 + .001) : chIdx > 6 ? 5 : 0;
+  if (runsOn !== lastRuns) { lastRuns = runsOn; runEls.forEach((el, i) => el.classList.toggle('on', i < runsOn)); verdict.classList.toggle('on', runsOn === 5); verdict.firstElementChild.textContent = `${runsOn} / 5 identical`; }
+
+  /* time */
+  if (!RM) T += dt * timeScale;
+  U.uT.value = T;
+  const s = sim();
+  if (!RM && Math.floor(T) !== epoch) { epoch = Math.floor(T); AG.forEach(a => { if (a.llm) a.pulse = 1; }); }   // the 1 s barrier: thinking agents act together
+  heat += ((clamp(s.m.sh * 1.4)) - heat) * .08;
+
+  /* blend chapter state */
+  const a = ST[Math.max(0, chIdx - 1)], b = ST[chIdx], k = sstep(.08, .92, chBlend);
+  want.pos.set(lerp(a.pos[0], b.pos[0], k), lerp(a.pos[1], b.pos[1], k), lerp(a.pos[2], b.pos[2], k));
+  want.tgt.set(lerp(a.tgt[0], b.tgt[0], k), lerp(a.tgt[1], b.tgt[1], k), lerp(a.tgt[2], b.tgt[2], k));
+  if (chIdx === 4) { const o = (p4 - .5) * 1.1; want.pos.x += Math.sin(o) * 5; want.pos.z += (Math.cos(o) - 1) * 3; }      // bullet-time orbit
+  if (chIdx === 0) { want.pos.z -= clamp(scrollY / innerHeight) * 1.5; }
+  const damp = RM ? 1 : 1 - Math.exp(-dt * 3.2);
+  cur.pos.lerp(want.pos, damp); cur.tgt.lerp(want.tgt, damp);
+  for (const key of ['fov', 'focus', 'ap', 'dim', 'hist', 'face', 'agents', 'follow', 'score', 'pool', 'orders']) cur[key] += (lerp(a[key], b[key], k) - cur[key]) * damp;
+  const splitWant = lerp(a.split, b.split, k) * (chIdx === 6 ? 1 - sstep(.58, .9, p6) : 1);
+  cur.split += (splitWant - cur.split) * damp;
+  ptr.sx += (ptr.x - ptr.sx) * .05; ptr.sy += (ptr.y - ptr.sy) * .05;
+  camera.position.copy(cur.pos); const fx = s.m.cx * cur.follow; camera.position.x += fx; if (!RM) { camera.position.x += ptr.sx * .9; camera.position.y -= ptr.sy * .5; }
+  camera.fov = cur.fov; camera.updateProjectionMatrix(); v3.copy(cur.tgt); v3.x += fx; camera.lookAt(v3);
+  camera.updateMatrixWorld();
+
+  /* agents */
+  AG.forEach((ag, i) => {
+    const bob = RM ? 0 : Math.sin(T * (.5 + i * .13) + i * 2.1) * .12;
+    ag.p.set(lerp(ag.hero[0], ag.score[0], cur.score), lerp(ag.hero[1], ag.score[1], cur.score) + bob * (1 - cur.score), lerp(ag.hero[2], ag.score[2], cur.score));
+    agentPos[i].copy(ag.p); ag.pulse *= RM ? 1 : .94;
+  });
+  bead.set(POOL_O.x + beadR * POOL_S, POOL_S / beadR, POOL_O.z); agentPos[5].copy(bead);
+
+  if (GL) {
+    U.uPx.value = renderer.domElement.height / (2 * Math.tan(camera.fov * Math.PI / 360));
+    U.uFocus.value = cur.focus; U.uAp.value = cur.ap; U.uDim.value = cur.dim; U.uSplit.value = cur.split; U.uHist.value = chIdx === 6 ? lerp(cur.hist, 1, sstep(.62, .92, p6)) : cur.hist; U.uFace.value = cur.face;
+    OU.uScore.value = cur.score; OU.uPoolA.value = cur.pool; OU.uOrders.value = cur.orders; OU.uBeadR.value = beadR;
+    OU.uArb.value = Math.min(1, cur.pool) * sstep(22, 40, Math.abs(gapBps)); OU.uArbSide.value = gapBps > 0 ? -1 : 1;
+    const np = nodeGeo.attributes.position, pu = nodeGeo.attributes.aPulse, li = nodeGeo.attributes.aLife;
+    AG.forEach((ag, i) => { np.setXYZ(i, ag.p.x, ag.p.y, ag.p.z); pu.setX(i, ag.pulse); li.setX(i, (i === 3 ? lerp(1, -1, cur.score) : i === 4 ? lerp(1, 0, cur.score) : 1) * cur.agents); });
+    np.setXYZ(5, bead.x, bead.y, bead.z); li.setX(5, Math.min(1, cur.pool));
+    np.setXYZ(6, slug.p.x, slug.p.y, slug.p.z); li.setX(6, slug.life);
+    np.needsUpdate = pu.needsUpdate = li.needsUpdate = true;
+    /* edges */
+    const SEG = tetherGeo.userData.SEG, tp = tetherGeo.attributes.position, tc = tetherGeo.attributes.color; let v = 0;
+    const touch = new THREE.Vector3(s.m.cx, .06, 0), ctl = new THREE.Vector3(), p0 = new THREE.Vector3(), p1 = new THREE.Vector3();
+    const edge = (from, to, lift, col, inten) => {
+      ctl.lerpVectors(from, to, .5); ctl.y += lift;
+      for (let q = 0; q < SEG; q++) { for (const [pp, t] of [[p0, q / SEG], [p1, (q + 1) / SEG]]) { const it = 1 - t; pp.set(it * it * from.x + 2 * it * t * ctl.x + t * t * to.x, it * it * from.y + 2 * it * t * ctl.y + t * t * to.y, it * it * from.z + 2 * it * t * ctl.z + t * t * to.z); }
+        tp.setXYZ(v, p0.x, p0.y, p0.z); tc.setXYZ(v, col.x * inten, col.y * inten, col.z * inten); v++; tp.setXYZ(v, p1.x, p1.y, p1.z); tc.setXYZ(v, col.x * inten, col.y * inten, col.z * inten); v++; } };
+    const ext = U.uExtent.value * (1 - cur.score) * cur.agents;
+    AG.forEach(ag => { edge(ag.p, touch, .5, C.bone, (.10 + ag.pulse * .55) * ext); edge(ag.p, bead, 1.4, C.pool, (.04 + ag.pulse * .25) * ext * Math.min(1, cur.pool)); });
+    tp.needsUpdate = tc.needsUpdate = true;
+    const sp = stemGeo.attributes.position, sc = stemGeo.attributes.color;
+    for (let i = 0; i < 4; i++) { const ag = AG[i], cc = i === 3 ? C.ask : C.bone, k2 = cur.score * .55; sp.setXYZ(i * 2, ag.p.x, 0, ag.p.z); sp.setXYZ(i * 2 + 1, ag.p.x, ag.p.y, ag.p.z); sc.setXYZ(i * 2, cc.x * k2 * .2, cc.y * k2 * .2, cc.z * k2 * .2); sc.setXYZ(i * 2 + 1, cc.x * k2, cc.y * k2, cc.z * k2); }
+    sp.needsUpdate = sc.needsUpdate = true;
+    /* horizon */
+    v3.set(market(T - SPAN).cx, 0, -LEN * 3).project(camera);
+    const bg = scene.children[0].material.uniforms; bg.uHor.value += (clamp(v3.y, -1.6, 1.6) - bg.uHor.value) * (RM ? 1 : .2); bg.uHeat.value = heat;
+    renderer.render(scene, camera);
+  }
+  placeTags();
+
+  /* readouts at 10 Hz */
+  hudAcc += dt; lamAcc += dt;
+  if (lamAcc > 1 / 12) { lamAcc = 0; lamBuf.copyWithin(0, 1); lamBuf[239] = lam; if (chIdx === 3) drawTrace(); }
+  if (hudAcc > .1 || RM) { hudAcc = 0; hud(s); const rail = $$('.rail a'); rail.forEach((el, i) => el.classList.toggle('on', i === Math.min(chIdx, 8))); }
+}
+requestAnimationFrame(frame);
+
+/* ───────────── intro + reveals ───────────── */
+const lines = $$('.ln > span');
+if (RM) { fire(.9, -1); T += 2.2; fire(.3, 1); T += 1.2; needsRender = true; drawTrace(); }
+else {
+  gsap.to(U.uExtent, { value: 1, duration: 2.6, ease: 'power2.out', delay: .15 });
+  gsap.set(lines, { yPercent: 105 });
+  $$('.ln').forEach(ln => { const first = ln.closest('#c0'); gsap.to(ln.firstElementChild, { yPercent: 0, duration: 1.1, ease: 'expo.out', delay: first ? .35 + [...ln.parentNode.children].indexOf(ln) * .09 : [...ln.parentNode.children].indexOf(ln) * .08,
+    scrollTrigger: first ? undefined : { trigger: ln.closest('h1,h2,.name'), start: 'top 88%' } }); });
+  $$('[data-rv]').forEach(el => { const first = el.closest('#c0'); gsap.from(el, { opacity: 0, y: 18, duration: .9, ease: 'power3.out', delay: first ? .8 : .12, scrollTrigger: first ? undefined : { trigger: el, start: 'top 92%' } }); });
+  /* the signature moment plays once on its own, unless the visitor got there first */
+  setTimeout(() => { if (!userActed && scrollY < innerHeight * .5) trigger('crash', false); }, 4200);
+  setInterval(() => { if (!document.hidden && T > regimeUntil + 22 && (chIdx === 0 || chIdx === 9)) trigger(['toxic', 'crash', 'whale'][Math.floor(T) % 3], false); }, 8000);
+}
+window.__apex = { trigger, get T() { return T; }, ST, cur };
+</script>
+<noscript><style>#scene{display:none}#poster{display:block}.ln>span{transform:none!important}</style></noscript>
+</body>
+</html>
