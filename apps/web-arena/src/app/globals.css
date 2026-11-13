@@ -52,6 +52,13 @@
   --radius-full: var(--radius);
 }
 
+/* The app header's horizon light (calm haze -> hot), animatable as a colour. */
+@property --horizon {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: #141a24;
+}
+
 /* Keep the shared focus treatment above component outline-none utilities. */
 :focus-visible {
   outline: 2px solid var(--bone);

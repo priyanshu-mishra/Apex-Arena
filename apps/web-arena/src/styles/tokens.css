@@ -1,4 +1,10 @@
-:root {
+/*
+ * `[data-chrome]` re-declares the tokens on the app shell's own chrome
+ * (header, status line, toasts, menus) so the old app styles that still
+ * redefine --bid, --ask and --border on :root cannot reach it.
+ */
+:root,
+[data-chrome] {
   --ink: #050608;
   --ink-2: #0A0C10;
   --haze: #141A24;

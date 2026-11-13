@@ -74,68 +74,76 @@
   --color-llm: var(--llm);
 }
 
-*,
-*::before,
-*::after {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
-}
+/*
+ * Element-level base rules live in Tailwind's `base` layer so the new app
+ * shell's utilities (padding, link colour, button text) can win over them.
+ * Old pages only use class selectors, which stay unlayered, so nothing else
+ * changes. (Task 9; Task 10 deletes this file.)
+ */
+@layer base {
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
 
-html {
-  background: var(--bg);
-  color-scheme: dark;
-}
+  html {
+    background: var(--bg);
+    color-scheme: dark;
+  }
 
-body {
-  min-height: 100vh;
-  background: var(--bg);
-  color: var(--text-2);
-  font-family: var(--font-sans);
-  font-size: var(--fs-md);
-  line-height: 1.5;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  text-rendering: optimizeLegibility;
-}
+  body {
+    min-height: 100vh;
+    background: var(--bg);
+    color: var(--text-2);
+    font-family: var(--font-sans);
+    font-size: var(--fs-md);
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
 
-button,
-input,
-select,
-textarea {
-  font: inherit;
-  color: inherit;
-}
+  button,
+  input,
+  select,
+  textarea {
+    font: inherit;
+    color: inherit;
+  }
 
-a {
-  color: var(--evm);
-  text-decoration: none;
-}
-a:hover {
-  text-decoration: underline;
-}
+  a {
+    color: var(--evm);
+    text-decoration: none;
+  }
+  a:hover {
+    text-decoration: underline;
+  }
 
-:focus-visible {
-  outline: 2px solid var(--evm);
-  outline-offset: 2px;
-  border-radius: 4px;
-}
+  :focus-visible {
+    outline: 2px solid var(--evm);
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
 
-::selection {
-  background: rgba(56, 189, 248, 0.3);
-}
+  ::selection {
+    background: rgba(56, 189, 248, 0.3);
+  }
 
-::-webkit-scrollbar {
-  width: 10px;
-  height: 10px;
-}
-::-webkit-scrollbar-thumb {
-  background: var(--border-strong);
-  border-radius: 999px;
-  border: 2px solid var(--bg);
-}
-::-webkit-scrollbar-track {
-  background: transparent;
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: var(--border-strong);
+    border-radius: 999px;
+    border: 2px solid var(--bg);
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
 }
 
 /* ---------- Type utilities ---------- */
