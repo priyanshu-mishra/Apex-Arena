@@ -76,16 +76,25 @@ test("space pauses and . steps one tick", async ({ page }) => {
 
 test("shell works on a phone", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
+  // No /app page scrolls sideways at 390px, in Simple or in Pro.
+  for (const density of ["simple", "pro"]) {
+    for (const path of ["/app", "/app/agents", "/app/benchmark", "/app/proof"]) {
+      await page.goto(path);
+      await page.evaluate((d) => localStorage.setItem("apex-density", d), density);
+      await page.reload();
+      await ready(page);
+      await page.waitForTimeout(400);
+      const wide = await page.evaluate(() => ({
+        doc: document.documentElement.scrollWidth,
+        body: document.body.scrollWidth,
+        vw: window.innerWidth,
+      }));
+      expect(Math.max(wide.doc, wide.body), `${density} ${path}`).toBeLessThanOrEqual(wide.vw);
+    }
+  }
+  await page.evaluate(() => localStorage.setItem("apex-density", "simple"));
   await page.goto("/app");
   await ready(page);
-  // The shell's own chrome fits (page bodies are re-laid out in Task 10).
-  const overflow = await page.evaluate(() => {
-    const chrome = document.querySelectorAll("[data-chrome], [data-chrome] *");
-    let worst = 0;
-    for (const el of chrome) worst = Math.max(worst, el.getBoundingClientRect().right - window.innerWidth);
-    return worst;
-  });
-  expect(overflow).toBeLessThanOrEqual(0);
   await expect(page.getByRole("radiogroup", { name: "Density" })).toBeInViewport();
   await page.getByRole("button", { name: "Menu" }).click();
   const sheet = page.getByRole("dialog", { name: "Menu" });

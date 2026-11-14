@@ -3,8 +3,19 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { SCENARIOS, fmtUsd, useArena, type OrderSide, type OrderType } from "../../lib/arena";
 import type { UserExecutionReceiptUi } from "../../lib/sharedBuffer";
+import { useDensity } from "../../lib/density";
+import { cn } from "../../lib/utils";
 import { Badge, ConceptPill, Kbd, Panel, Segmented, Tabs } from "../ui";
-import s from "./arena.module.css";
+import { btn, caption, dot, empty, field, fieldLabel, input, num, table, tableScroll, td, tdNum, th, toneColor } from "../ui/kit";
+
+/* Shared layout pieces for the dock's forms. */
+const FORM_GRID = "grid min-w-0 gap-6 p-4 lg:grid-cols-2";
+const FORM_COL = "flex min-w-0 flex-col gap-4";
+const HELP = "font-sans text-[13px] leading-[1.5] text-bone-3 text-pretty";
+const CHIPS = "flex flex-wrap gap-1.5";
+const SUMMARY = "flex flex-col border-t border-rule-2";
+const SUMMARY_ROW = "flex items-baseline justify-between gap-3 border-b border-rule py-2 font-sans text-[13px] text-bone-2";
+const SUMMARY_TOTAL = "text-bone [&>span:last-child]:text-[15px]";
 
 type DockTab = "ticket" | "swap" | "lab" | "receipts";
 
@@ -25,6 +36,14 @@ function OrderTicket({ flashKey }: { flashKey: number }) {
   const [type, setType] = useState<OrderType>("LIMIT");
   const [price, setPrice] = useState(() => frame.clobMidUsd.toFixed(2));
   const [qty, setQty] = useState("5");
+  // A book click briefly outlines the price field so the prefill is visible.
+  const [flash, setFlash] = useState(false);
+  useEffect(() => {
+    if (!flashKey) return;
+    setFlash(true);
+    const id = window.setTimeout(() => setFlash(false), 700);
+    return () => window.clearTimeout(id);
+  }, [flashKey]);
 
   useEffect(() => {
     if (!ticket) return;
@@ -59,24 +78,24 @@ function OrderTicket({ flashKey }: { flashKey: number }) {
   };
 
   return (
-    <form className={s.formGrid} onSubmit={submit} aria-label="Order ticket">
-      <div className={s.formCol}>
-        <div className="field">
-          <span className="field-label">Side</span>
+    <form className={FORM_GRID} onSubmit={submit} aria-label="Order ticket">
+      <div className={FORM_COL}>
+        <div className={field}>
+          <span className={fieldLabel}>Side</span>
           <Segmented
             ariaLabel="Order side"
             value={side}
             onChange={setSide}
             options={[
-              { value: "BID", label: <span className="c-bid">Buy</span> },
-              { value: "ASK", label: <span className="c-ask">Sell</span> },
+              { value: "BID", label: "Buy" },
+              { value: "ASK", label: "Sell" },
             ]}
           />
         </div>
-        <div className="field">
-          <span className="field-label">
+        <div className={field}>
+          <span className={fieldLabel}>
             Order type
-            <span className="row" style={{ ["--gap" as string]: "4px" }}>
+            <span className="flex gap-3">
               <ConceptPill concept="ioc" label="IOC" align="right" />
               <ConceptPill concept="postOnly" label="Post-only" align="right" />
             </span>
@@ -92,14 +111,13 @@ function OrderTicket({ flashKey }: { flashKey: number }) {
               { value: "IOC", label: "IOC" },
             ]}
           />
-          <p className={s.typeHelp}>{TYPE_HELP[type]}</p>
+          <p className={HELP}>{TYPE_HELP[type]}</p>
         </div>
-        <div className="grid-2" style={{ ["--gap" as string]: "12px" }}>
-          <label className="field">
-            <span className="field-label">Price (USDT)</span>
+        <div className="grid grid-cols-2 gap-3">
+          <label className={field}>
+            <span className={fieldLabel}>Price (USDT)</span>
             <input
-              key={`px-${flashKey}`}
-              className={`input mono ${flashKey ? s.flash : ""}`}
+              className={cn(input, flash && "border-bone bg-haze")}
               inputMode="decimal"
               value={isMarket ? "Best available" : price}
               disabled={isMarket}
@@ -107,49 +125,49 @@ function OrderTicket({ flashKey }: { flashKey: number }) {
               aria-label="Limit price in USDT"
             />
           </label>
-          <label className="field">
-            <span className="field-label">Size (ETH)</span>
-            <input className="input mono" inputMode="decimal" value={qty} onChange={(e) => setQty(e.target.value)} aria-label="Order size in ETH" />
+          <label className={field}>
+            <span className={fieldLabel}>Size (ETH)</span>
+            <input className={input} inputMode="decimal" value={qty} onChange={(e) => setQty(e.target.value)} aria-label="Order size in ETH" />
           </label>
         </div>
-        <div className={s.chips} role="group" aria-label="Quick sizes">
+        <div className={CHIPS} role="group" aria-label="Quick sizes">
           {[0.5, 1, 5, 10, 25].map((v) => (
-            <button key={v} type="button" className={s.chip} aria-pressed={Number(qty) === v} onClick={() => setQty(String(v))}>
+            <button key={v} type="button" className={btn("ghost", "sm", num)} aria-pressed={Number(qty) === v} onClick={() => setQty(String(v))}>
               {v} ETH
             </button>
           ))}
-          <button type="button" className={s.chip} onClick={() => setPrice(frame.clobMidUsd.toFixed(2))} disabled={isMarket}>
+          <button type="button" className={btn("ghost", "sm")} onClick={() => setPrice(frame.clobMidUsd.toFixed(2))} disabled={isMarket}>
             Use mid
           </button>
         </div>
       </div>
 
-      <div className={s.formCol}>
-        <div className={s.summary} aria-live="polite">
-          <div className={s.summaryRow}>
+      <div className={FORM_COL}>
+        <div className={SUMMARY} aria-live="polite">
+          <div className={SUMMARY_ROW}>
             <span>Best bid / best ask</span>
-            <span className="num">
-              <span className="c-bid">{fmtUsd(bestBid)}</span> / <span className="c-ask">{fmtUsd(bestAsk)}</span>
+            <span className={num}>
+              <span className="text-bid">{fmtUsd(bestBid)}</span> / <span className="text-ask">{fmtUsd(bestAsk)}</span>
             </span>
           </div>
-          <div className={s.summaryRow}>
+          <div className={SUMMARY_ROW}>
             <span>{isMarket ? "Expected price" : "Your price"}</span>
-            <span className="num">{valid ? fmtUsd(px) : "—"}</span>
+            <span className={num}>{valid ? fmtUsd(px) : "—"}</span>
           </div>
-          <div className={s.summaryRow}>
+          <div className={SUMMARY_ROW}>
             <span>Taker fee ({takerPart ? `${TAKER_FEE_BPS} bps` : "none"})</span>
-            <span className="num">{fmtUsd(fee)}</span>
+            <span className={num}>{fmtUsd(fee)}</span>
           </div>
-          <div className={`${s.summaryRow} ${s.summaryTotal}`}>
+          <div className={cn(SUMMARY_ROW, SUMMARY_TOTAL)}>
             <span>Notional</span>
-            <span className="num">{valid ? fmtUsd(notional) : "—"}</span>
+            <span className={num}>{valid ? fmtUsd(notional) : "—"}</span>
           </div>
         </div>
-        <p className={s.typeHelp}>{valid ? outcome : "Enter a positive price and size."}</p>
-        <button type="submit" className={`btn btn-lg btn-block ${side === "BID" ? "btn-bid" : "btn-ask"}`} disabled={!valid}>
+        <p className={HELP}>{valid ? outcome : "Enter a positive price and size."}</p>
+        <button type="submit" className={btn("primary", "lg", "w-full")} disabled={!valid}>
           {verb} {valid ? q : ""} ETH {isMarket ? "at market" : valid ? `at ${fmtUsd(px)}` : ""}
         </button>
-        <p className="caption">Tip: click any level in the order book to prefill this ticket.</p>
+        <p className={caption}>Tip: click any level in the order book to prefill this ticket.</p>
       </div>
     </form>
   );
@@ -180,16 +198,16 @@ function AmmSwap() {
 
   return (
     <form
-      className={s.formGrid}
+      className={FORM_GRID}
       aria-label="AMM swap"
       onSubmit={(e) => {
         e.preventDefault();
         if (valid) actions.swap(sellEth, a);
       }}
     >
-      <div className={s.formCol}>
-        <div className="field">
-          <span className="field-label">
+      <div className={FORM_COL}>
+        <div className={field}>
+          <span className={fieldLabel}>
             Direction
             <ConceptPill concept="invariantK" label="x · y = k" align="right" />
           </span>
@@ -206,66 +224,66 @@ function AmmSwap() {
             ]}
           />
         </div>
-        <label className="field">
-          <span className="field-label">You pay ({inUnit})</span>
-          <input className="input mono" inputMode="decimal" value={amount} onChange={(e) => setAmount(e.target.value)} aria-label={`Amount in ${inUnit}`} />
+        <label className={field}>
+          <span className={fieldLabel}>You pay ({inUnit})</span>
+          <input className={input} inputMode="decimal" value={amount} onChange={(e) => setAmount(e.target.value)} aria-label={`Amount in ${inUnit}`} />
         </label>
-        <div className={s.chips} role="group" aria-label="Quick amounts">
+        <div className={CHIPS} role="group" aria-label="Quick amounts">
           {chips.map((v) => (
-            <button key={v} type="button" className={s.chip} aria-pressed={a === v} onClick={() => setAmount(String(v))}>
+            <button key={v} type="button" className={btn("ghost", "sm", num)} aria-pressed={a === v} onClick={() => setAmount(String(v))}>
               {v.toLocaleString("en-US")} {inUnit}
             </button>
           ))}
         </div>
-        <p className={s.typeHelp}>
+        <p className={HELP}>
           The swap executes inside the embedded revm EVM against the constant-product pool. Bigger trades move further along the curve and pay more slippage.
         </p>
       </div>
-      <div className={s.formCol}>
-        <div className={s.summary} aria-live="polite">
-          <div className={s.summaryRow}>
+      <div className={FORM_COL}>
+        <div className={SUMMARY} aria-live="polite">
+          <div className={SUMMARY_ROW}>
             <span>Pool reserves</span>
-            <span className="num">
+            <span className={num}>
               {x.toLocaleString("en-US", { maximumFractionDigits: 2 })} ETH / {y.toLocaleString("en-US", { maximumFractionDigits: 0 })} USDT
             </span>
           </div>
-          <div className={s.summaryRow}>
+          <div className={SUMMARY_ROW}>
             <span>Spot before / after</span>
-            <span className="num">
+            <span className={num}>
               {fmtUsd(spot)} / {valid ? fmtUsd(newSpot) : "—"}
             </span>
           </div>
-          <div className={s.summaryRow}>
+          <div className={SUMMARY_ROW}>
             <span>Pool fee (30 bps)</span>
-            <span className="num">
+            <span className={num}>
               {feePaid.toLocaleString("en-US", { maximumFractionDigits: 4 })} {inUnit}
             </span>
           </div>
-          <div className={s.summaryRow}>
+          <div className={SUMMARY_ROW}>
             <span>Effective price</span>
-            <span className="num">{effPrice ? fmtUsd(effPrice) : "—"}</span>
+            <span className={num}>{effPrice ? fmtUsd(effPrice) : "—"}</span>
           </div>
-          <div className={s.summaryRow}>
+          <div className={SUMMARY_ROW}>
             <span>Price impact incl. fee</span>
-            <span className="num" style={{ color: impactBps > 100 ? "var(--ask)" : impactBps > 34 ? "var(--chaos)" : undefined }}>
+            <span className={num} style={{ color: impactBps > 100 ? "var(--ask)" : impactBps > 34 ? "var(--shock)" : undefined }}>
               {impactBps.toFixed(1)} bps
             </span>
           </div>
-          <div className={`${s.summaryRow} ${s.summaryTotal}`}>
+          <div className={cn(SUMMARY_ROW, SUMMARY_TOTAL)}>
             <span>You receive</span>
-            <span className="num">
+            <span className={num}>
               {out.toLocaleString("en-US", { maximumFractionDigits: sellEth ? 2 : 4 })} {outUnit}
             </span>
           </div>
         </div>
         {impactBps > 100 ? (
-          <div className="callout callout-ask">This trade moves the pool more than 1%. Consider splitting it.</div>
+          <p className="border-l border-ask pl-3 font-sans text-[13px] leading-[1.5] text-bone">This trade moves the pool more than 1%. Consider splitting it.</p>
         ) : null}
-        <button type="submit" className="btn btn-lg btn-block btn-evm" disabled={!valid}>
+        <button type="submit" className={btn("primary", "lg", "w-full")} disabled={!valid}>
           Swap {valid ? a.toLocaleString("en-US") : ""} {inUnit} for {outUnit}
         </button>
-        <p className="caption">
-          Quote uses <span className="mono">out = y·Δx·0.997 / (x + Δx·0.997)</span> on the current reserves; the block may move before it commits.
+        <p className={caption}>
+          Quote uses <span className={num}>out = y·Δx·0.997 / (x + Δx·0.997)</span> on the current reserves; the block may move before it commits.
         </p>
       </div>
     </form>
@@ -276,43 +294,43 @@ function AmmSwap() {
 function StressLab() {
   const { actions, paused, speed, frame } = useArena();
   return (
-    <div className="stack" style={{ ["--gap" as string]: "16px" }}>
-      <div className={s.playback} role="group" aria-label="Simulation playback">
-        <button type="button" className={`btn ${paused ? "btn-bid" : ""}`} onClick={actions.togglePause}>
+    <div className="flex min-w-0 flex-col gap-5 p-4">
+      <div className="flex flex-wrap items-center gap-2" role="group" aria-label="Simulation playback">
+        <button type="button" className={btn("ghost", "md", "w-[92px]")} onClick={actions.togglePause}>
           {paused ? "Resume" : "Pause"}
         </button>
-        <button type="button" className="btn" onClick={() => actions.step(1)} disabled={!paused} title="Advance one 10 ms fast tick">
+        <button type="button" className={btn()} onClick={() => actions.step(1)} disabled={!paused} title="Advance one 10 ms fast tick">
           Step 1 tick
         </button>
-        <button type="button" className="btn" onClick={() => actions.step(100)} disabled={!paused} title="Advance one macro epoch (100 ticks)">
+        <button type="button" className={btn()} onClick={() => actions.step(100)} disabled={!paused} title="Advance one macro epoch (100 ticks)">
           Step 1 epoch
         </button>
         <Segmented
           ariaLabel="Simulation speed"
           value={speed}
           onChange={actions.setSpeed}
-          options={[1, 5, 15].map((v) => ({ value: v, label: <span className="num">{v}×</span> }))}
+          options={[1, 5, 15].map((v) => ({ value: v, label: <span className={num}>{v}×</span> }))}
         />
-        <button type="button" className="btn btn-ghost" onClick={actions.reset}>
+        <button type="button" className={btn()} onClick={actions.reset}>
           Reset to seed 42
         </button>
-        <span className="caption" style={{ marginLeft: "auto" }}>
-          Tick <span className="num text-1">{frame.tick.toLocaleString("en-US")}</span>, press <Kbd>Space</Kbd> to pause
+        <span className={cn(caption, "basis-full sm:ml-auto sm:basis-auto")}>
+          Tick <span className={cn(num, "text-bone")}>{frame.tick.toLocaleString("en-US")}</span>, press <Kbd>Space</Kbd> to pause
         </span>
       </div>
-      <div className={s.scenarioGrid}>
+      {/* Scenarios as stack rows: name / one sentence / action. */}
+      <div className="border-t border-rule-2">
         {SCENARIOS.map((sc) => (
-          <article key={sc.id} className={s.scenario}>
-            <div className="row-between">
-              <h4>{sc.label}</h4>
-              <span className="dot" style={{ ["--accent" as string]: `var(--${sc.tone})` }} aria-hidden />
-            </div>
-            <p>{sc.description}</p>
-            <button
-              type="button"
-              className={`btn btn-sm ${sc.tone === "ask" ? "btn-danger" : sc.tone === "evm" ? "btn-evm" : sc.tone === "bid" ? "" : "btn-chaos"}`}
-              onClick={() => actions.injectScenario(sc.id)}
-            >
+          <article
+            key={sc.id}
+            className="grid grid-cols-1 items-baseline gap-x-6 gap-y-2 border-b border-rule py-3.5 sm:grid-cols-[minmax(0,15em)_minmax(0,1fr)_auto]"
+          >
+            <h3 className="flex items-center gap-2 font-sans text-[15px] leading-[1.2] font-[560] text-bone [font-variation-settings:'wdth'_110]">
+              <span className={dot} style={{ background: toneColor(sc.tone) }} aria-hidden />
+              {sc.label}
+            </h3>
+            <p className="font-sans text-[13.5px] leading-[1.5] text-bone-2">{sc.description}</p>
+            <button type="button" className={btn("ghost", "sm", "justify-self-start")} onClick={() => actions.injectScenario(sc.id)}>
               Inject scenario
             </button>
           </article>
@@ -345,44 +363,36 @@ function Receipts() {
   const { frame } = useArena();
   const rows = frame.userReceipts;
   if (rows.length === 0) {
-    return (
-      <div className="empty">
-        No trades yet. Send an order from the ticket, swap on the AMM, or capture the arbitrage to see receipts here.
-      </div>
-    );
+    return <div className={empty}>No trades yet. Send an order from the ticket, swap on the AMM, or capture the arbitrage to see receipts here.</div>;
   }
   return (
-    <div className={s.tableScroll}>
-      <table className="table">
+    <div className={tableScroll}>
+      <table className={cn(table, "min-w-[640px]")}>
         <thead>
           <tr>
-            <th className="r">Tick</th>
-            <th>Venue</th>
-            <th>Trade</th>
-            <th className="r">Price</th>
-            <th>Size</th>
-            <th>Status</th>
+            <th className={cn(th, "text-right")}>Tick</th>
+            <th className={th}>Venue</th>
+            <th className={th}>Trade</th>
+            <th className={cn(th, "text-right")}>Price</th>
+            <th className={th}>Size</th>
+            <th className={th}>Status</th>
           </tr>
         </thead>
         <tbody>
           {rows.map((r) => (
             <tr key={r.id}>
-              <td className="r num">{r.tick.toLocaleString("en-US")}</td>
-              <td>
-                <Badge tone={r.venue === "REVM" ? "evm" : undefined}>{r.venue === "REVM" ? "Revm" : "CLOB"}</Badge>
-              </td>
-              <td>
-                <span className={r.side === "BID" ? "c-bid" : r.side === "ASK" ? "c-ask" : "c-evm"} style={{ fontWeight: 600 }}>
+              <td className={tdNum}>{r.tick.toLocaleString("en-US")}</td>
+              <td className={td}>{r.venue === "REVM" ? "Revm" : "CLOB"}</td>
+              <td className={td}>
+                <span className="font-semibold" style={{ color: r.side === "BID" ? "var(--bid)" : r.side === "ASK" ? "var(--ask)" : "var(--pool)" }}>
                   {sideLabel(r)}
                 </span>{" "}
-                <span className="text-3">{r.orderType.replace("_", "-").toLowerCase()}</span>
-                <div className={s.detail}>{r.detail}</div>
+                <span className="text-bone-3">{r.orderType.replace("_", "-").toLowerCase()}</span>
+                <div className="mt-1 font-sans text-[12.5px] leading-[1.4] text-bone-3">{r.detail}</div>
               </td>
-              <td className="r num">{r.priceFormatted}</td>
-              <td className="num" style={{ whiteSpace: "nowrap" }}>
-                {r.qtyFormatted.replace(/->/g, "→")}
-              </td>
-              <td>
+              <td className={tdNum}>{r.priceFormatted}</td>
+              <td className={cn(td, num, "whitespace-nowrap text-bone")}>{r.qtyFormatted.replace(/->/g, "→")}</td>
+              <td className={td}>
                 <Badge tone={statusTone(r.status)}>{sentence(r.status)}</Badge>
               </td>
             </tr>
@@ -396,8 +406,12 @@ function Receipts() {
 /* ---------------- Dock ---------------- */
 export function ExecutionDock() {
   const { ticket, frame } = useArena();
-  const [tab, setTab] = useState<DockTab>("ticket");
+  const [density] = useDensity();
+  const pro = density === "pro";
+  const [tabChoice, setTab] = useState<DockTab>("ticket");
   const [flashKey, setFlashKey] = useState(0);
+  // Simple shows the order ticket only; Pro adds the swap, stress lab and receipts.
+  const tab: DockTab = pro ? tabChoice : "ticket";
 
   useEffect(() => {
     if (!ticket) return;
@@ -409,12 +423,14 @@ export function ExecutionDock() {
 
   return (
     <Panel
-      title="Execution and stress testing"
-      subtitle="Trade as the [YOU] desk, or break the market on purpose"
+      title={pro ? "Your desk" : "Order ticket"}
+      subtitle={pro ? "Trade as the [YOU] desk, or break the market on purpose" : "Trade as the [YOU] desk against the agents"}
       flush
       explain={{
-        what: "Your trading desk. Orders and swaps are routed into the same deterministic engine the agents trade against, so your fills move prices, your equity is scored with the same ACS, and you can be liquidated like anyone else.",
-        how: "Order ticket sends limit, market, post-only or IOC orders to the CLOB. AMM swap trades directly against the revm pool. Stress lab injects scripted shocks and controls playback. Receipts lists every execution with its outcome.",
+        what: "Your trading desk. Orders are routed into the same deterministic engine the agents trade against, so your fills move prices, your equity is scored with the same ACS, and you can be liquidated like anyone else.",
+        how: pro
+          ? "Order ticket sends limit, market, post-only or IOC orders to the CLOB. AMM swap trades directly against the revm pool. Stress lab injects scripted shocks and controls playback. Receipts lists every execution with its outcome."
+          : "Pick a side, an order type, a price and a size, then send. Switch to Pro for AMM swaps, the stress lab and your receipts.",
         math: (
           <>
             CLOB taker fills pay 4 bps; makers pay nothing. AMM swaps pay 30 bps into the pool and price off <code>x · y = k</code>. All amounts are converted to <code>FixedQty(i64)</code> pips before they reach the engine, so a 5 ETH order is the integer 500,000,000.
@@ -422,17 +438,20 @@ export function ExecutionDock() {
         ),
       }}
     >
-      <Tabs
-        value={tab}
-        onChange={setTab}
-        tabs={[
-          { id: "ticket", label: "Order ticket" },
-          { id: "swap", label: "AMM swap" },
-          { id: "lab", label: "Stress lab" },
-          { id: "receipts", label: count ? `Your receipts (${count})` : "Your receipts" },
-        ]}
-      />
-      <div className={tab === "receipts" ? undefined : s.dockBody} role="tabpanel">
+      {pro ? (
+        <Tabs
+          ariaLabel="Desk"
+          value={tab}
+          onChange={setTab}
+          tabs={[
+            { id: "ticket", label: "Order ticket" },
+            { id: "swap", label: "AMM swap" },
+            { id: "lab", label: "Stress lab" },
+            { id: "receipts", label: count ? `Your receipts (${count})` : "Your receipts" },
+          ]}
+        />
+      ) : null}
+      <div role={pro ? "tabpanel" : undefined}>
         {tab === "ticket" ? <OrderTicket flashKey={flashKey} /> : null}
         {tab === "swap" ? <AmmSwap /> : null}
         {tab === "lab" ? <StressLab /> : null}

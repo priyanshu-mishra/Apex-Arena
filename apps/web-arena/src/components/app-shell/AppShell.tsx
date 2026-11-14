@@ -89,8 +89,8 @@ function Toasts({ toasts, dismiss }: { toasts: Toast[]; dismiss: (id: number) =>
  * The app shell in the landing's language: a top bar (wordmark, sections,
  * Simple / Pro, pause, ⌘K) whose ground carries the regime's horizon light,
  * a one-line market narrative, the page, the landing status line, toasts and
- * the command menu. Old class hooks `.app-shell` / `.view-container` stay for
- * the pages' print styles until Task 10.
+ * the command menu. The chrome is `print:hidden`, so a printed page shows
+ * only its own content (the benchmark report).
  */
 export function AppShell({ children }: { children: React.ReactNode }) {
   const { frame, view, paused, actions, setPaletteOpen, toasts } = useArena();
@@ -100,7 +100,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const horizon = { "--horizon": horizonColor(frame.regime) } as React.CSSProperties;
 
   return (
-    <div className="app-shell flex min-h-svh flex-col bg-ink font-sans" data-regime={frame.regime}>
+    <div className="flex min-h-svh flex-col bg-ink font-sans" data-regime={frame.regime}>
       <header
         data-chrome
         style={horizon}
@@ -165,7 +165,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </aside>
       ) : null}
 
-      <main className="view-container" key={view}>
+      <main className="mx-auto w-full max-w-[1720px] min-w-0 flex-1 px-[clamp(16px,3.9vw,56px)] pt-6 pb-12 print:max-w-none print:p-0" key={view} data-view={view}>
         {children}
       </main>
 

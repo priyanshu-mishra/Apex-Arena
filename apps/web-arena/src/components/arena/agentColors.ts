@@ -1,15 +1,19 @@
 import { USER_AGENT_ID } from "../../lib/arena";
 import type { PricePointUi } from "../../lib/sharedBuffer";
 
-/** Stable per-agent line colors shared by the chart legend and leaderboard. */
+/**
+ * Stable per-agent line colours shared by the chart legend and leaderboard.
+ * Bone for your desk; the rest are muted, warm-to-cool neutrals plus the
+ * pool blue and shock amber (guide §2: no purple anywhere).
+ */
 const FIXED: Record<string, string> = {
-  [USER_AGENT_ID]: "#10b981",
-  "Gemini-2.5": "#a855f7",
-  "DeepSeek-R1": "#f472b6",
-  "Hawkes-HFT": "#f59e0b",
-  "MM-Alpha": "#38bdf8",
+  [USER_AGENT_ID]: "#EDEAE3",
+  "Gemini-2.5": "#6C9CFF",
+  "DeepSeek-R1": "#D9A07A",
+  "Hawkes-HFT": "#FFB020",
+  "MM-Alpha": "#7C8794",
 };
-const EXTRA = ["#e2e8f0", "#facc15", "#2dd4bf", "#818cf8", "#fb923c", "#a3e635"];
+const EXTRA = ["#A8A69F", "#B9C79A", "#C9B27A", "#8FB3C9", "#C98F7A", "#9FBFB0"];
 
 export function agentColor(id: string): string {
   if (FIXED[id]) return FIXED[id];
@@ -30,11 +34,12 @@ export function pointEquities(p: PricePointUi): Record<string, number> {
   };
 }
 
-export const REGIME_COLOR: Record<string, string> = {
-  CALM: "#10b981",
-  TRENDING: "#38bdf8",
-  "LIQUIDITY DROUGHT": "#f59e0b",
-  "FLASH CRASH": "#f43f5e",
+/** Regime band alpha over the chart: calm is clear, shocks run amber (guide §5). */
+export const REGIME_BAND_ALPHA: Record<string, number> = {
+  CALM: 0,
+  TRENDING: 0.06,
+  "LIQUIDITY DROUGHT": 0.1,
+  "FLASH CRASH": 0.16,
 };
 
 export function regimeLabel(r: string): string {
