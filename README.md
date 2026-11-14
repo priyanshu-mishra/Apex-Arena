@@ -339,3 +339,5 @@ Any change that alters the seed-42 state hash must explain why in the PR descrip
 ## 📄 License
 
 MIT — see the `license` field in [`Cargo.toml`](Cargo.toml).
+
+The web workstation's font supplements (`apps/web-arena/public/fonts/*.woff2`, subsets of Archivo and Martian Mono) are under the SIL Open Font License 1.1; see [`OFL-NOTICE.txt`](apps/web-arena/public/fonts/OFL-NOTICE.txt).
