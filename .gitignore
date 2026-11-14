@@ -39,3 +39,6 @@ apps/web-arena/playwright-report/
 
 # Superdesign scratch
 .superdesign/tmp/
+
+# TypeScript incremental build info
+apps/web-arena/tsconfig.tsbuildinfo
