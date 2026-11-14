@@ -2,10 +2,10 @@
 
 import type { BenchmarkProgress, BenchmarkResult } from "../../lib/sharedBuffer";
 import { displayAgentName, fmtSigned, fmtUsd } from "../../lib/arena";
-import { Badge } from "../ui";
-import { STAGE_META, regimeText, regimeToneOf, unit } from "./benchModel";
-import { CheckIcon, StageIcon } from "./StageIcons";
-import styles from "./Bench.module.css";
+import { useDensity } from "../../lib/density";
+import { cn } from "../../lib/utils";
+import { dot, label, mono12, toneColor } from "../ui/kit";
+import { STAGE_META, regimeText, unit } from "./benchModel";
 
 type Status = "pending" | "running" | "done";
 
@@ -20,8 +20,23 @@ function statusFor(i: number, running: boolean, progress: BenchmarkProgress | nu
   return hasResult ? "done" : "pending";
 }
 
-const STATUS_TEXT: Record<Status, string> = { pending: "Pending", running: "Running", done: "Done" };
+const STATUS_TEXT: Record<Status, string> = { pending: "pending", running: "running", done: "done" };
 
+function Stat({ k, v, color }: { k: string; v: string; color?: string }) {
+  return (
+    <span className="flex min-w-0 flex-col gap-1">
+      <span className={cn(label, "text-[12px]")}>{k}</span>
+      <span className={cn(mono12, "text-[13px] text-bone")} style={color ? { color } : undefined}>
+        {v}
+      </span>
+    </span>
+  );
+}
+
+/**
+ * The four stages as landing stack rows: big word / mono status / one
+ * sentence. Done stages add where the market ended (Pro: every readout).
+ */
 export function StagePipeline({
   running,
   progress,
@@ -31,6 +46,8 @@ export function StagePipeline({
   progress: BenchmarkProgress | null;
   result: BenchmarkResult | null;
 }) {
+  const [density] = useDensity();
+  const pro = density === "pro";
   const showResult = !running && result;
   const pct = running ? Math.round((progress?.progress ?? 0) * 100) : result ? 100 : 0;
   const stageCount = progress?.stageCount ?? STAGE_META.length;
@@ -48,8 +65,8 @@ export function StagePipeline({
   }
 
   return (
-    <div>
-      <ol className={styles.pipeline} style={{ margin: 0, padding: 0, listStyle: "none" }}>
+    <div className="flex flex-col">
+      <ol className="m-0 list-none border-t border-rule-2 p-0">
         {STAGE_META.map((meta, i) => {
           const status = statusFor(i, running, progress, Boolean(result));
           const stage = showResult ? result.stages[i] : undefined;
@@ -57,87 +74,69 @@ export function StagePipeline({
           return (
             <li
               key={meta.key}
-              className={styles.stage}
               data-status={status}
-              style={{ ["--accent" as string]: `var(--${meta.tone})` }}
               aria-label={`Stage ${i + 1}, ${meta.name}: ${STATUS_TEXT[status]}`}
+              className={cn(
+                "grid grid-cols-1 items-baseline gap-x-6 gap-y-2 border-b border-rule py-5 transition-opacity duration-300 md:grid-cols-12",
+                status === "pending" && running ? "opacity-40" : "opacity-100",
+              )}
             >
-              <div className={styles.stageTop}>
-                <span className={styles.stageIcon}>
-                  <StageIcon stageKey={meta.key} />
-                </span>
-                <span className={styles.stageIndex}>Stage {i + 1}</span>
-                <span className={styles.status} data-status={status}>
-                  {status === "running" ? <span className={styles.spinner} aria-hidden /> : null}
-                  {status === "done" ? <CheckIcon size={12} /> : null}
-                  {STATUS_TEXT[status]}
-                </span>
-              </div>
-              <div className="stack" style={{ ["--gap" as string]: "4px" }}>
-                <span className={styles.stageName}>{meta.name}</span>
-                <span className={styles.stageStress}>{meta.stress}</span>
-              </div>
-              {stage ? (
-                <div className={styles.stageStats}>
-                  <div className={`${styles.stat} ${styles.statWide}`}>
-                    <span className={styles.statLabel}>End regime</span>
-                    <span>
-                      <Badge tone={regimeToneOf(stage.regime)}>{regimeText(stage.regime)}</Badge>
-                    </span>
-                  </div>
-                  <div className={styles.stat}>
-                    <span className={styles.statLabel}>CLOB mid</span>
-                    <span className={styles.statValue}>{fmtUsd(stage.clobMidUsd)}</span>
-                  </div>
-                  <div className={styles.stat}>
-                    <span className={styles.statLabel}>Revm spot</span>
-                    <span className={styles.statValue}>{fmtUsd(stage.evmSpotUsd)}</span>
-                  </div>
-                  <div className={styles.stat}>
-                    <span className={styles.statLabel}>Basis</span>
-                    <span
-                      className={styles.statValue}
-                      style={{ color: Math.abs(stage.basisBps) >= 25 ? "var(--chaos)" : undefined }}
-                    >
-                      {fmtSigned(stage.basisBps, 1, " bps")}
-                    </span>
-                  </div>
-                  <div className={styles.stat}>
-                    <span className={styles.statLabel}>Hawkes λ</span>
-                    <span className={styles.statValue}>{stage.hawkesIntensity.toFixed(3)}</span>
-                  </div>
-                  {leader ? (
-                    <div className={`${styles.stat} ${styles.statWide}`}>
-                      <span className={styles.statLabel}>Stage leader</span>
-                      <span className={styles.statValue} style={{ fontFamily: "var(--font-sans)" }}>
-                        {displayAgentName(leader.agentId)}{" "}
-                        <span className="num text-3">ACS {unit(leader.acsScoreBps, 3)}</span>
-                      </span>
+              <span className="font-sans text-[length:clamp(22px,2.4vw,34px)] leading-none font-[560] tracking-[-0.03em] text-bone [font-variation-settings:'wdth'_122] md:col-span-5">
+                {meta.name}
+              </span>
+              <span className={cn(mono12, "flex items-center gap-2 text-bone-2 md:col-span-2")}>
+                <span
+                  className={dot}
+                  style={{
+                    background: status === "running" ? "var(--shock)" : status === "done" ? toneColor(meta.tone) : "transparent",
+                    outline: status === "pending" ? "1px solid var(--bone-3)" : undefined,
+                  }}
+                  aria-hidden
+                />
+                {String(i + 1).padStart(2, "0")} · {STATUS_TEXT[status]}
+                {status === "running" ? ` ${pct}%` : ""}
+              </span>
+              <div className="flex min-w-0 flex-col gap-3 md:col-span-5">
+                <p className="font-sans text-[length:clamp(14px,1.1vw,16px)] leading-[1.45] text-bone-2 text-pretty">{meta.stress}</p>
+                {stage ? (
+                  pro ? (
+                    <div className="grid grid-cols-2 gap-x-4 gap-y-2.5 sm:grid-cols-3">
+                      <Stat k="End regime" v={regimeText(stage.regime)} />
+                      <Stat k="CLOB mid" v={fmtUsd(stage.clobMidUsd)} />
+                      <Stat k="Revm spot" v={fmtUsd(stage.evmSpotUsd)} />
+                      <Stat k="Basis" v={fmtSigned(stage.basisBps, 1, " bps")} color={Math.abs(stage.basisBps) >= 25 ? "var(--shock)" : undefined} />
+                      <Stat k="Hawkes λ" v={stage.hawkesIntensity.toFixed(3)} />
+                      {leader ? <Stat k="Stage leader" v={`${displayAgentName(leader.agentId)} ${unit(leader.acsScoreBps, 3)}`} /> : null}
                     </div>
-                  ) : null}
-                </div>
-              ) : null}
+                  ) : (
+                    <p className={cn(mono12, "text-bone-3")}>
+                      ended {regimeText(stage.regime).toLowerCase()}
+                      {leader ? ` · led by ${displayAgentName(leader.agentId)} at ${unit(leader.acsScoreBps, 3)}` : ""}
+                    </p>
+                  )
+                ) : null}
+              </div>
             </li>
           );
         })}
       </ol>
 
-      <div className={styles.progressWrap}>
-        <div className="row-between" style={{ flexWrap: "wrap" }}>
-          <span className="label" aria-live="polite">
+      <div className="flex flex-col gap-2 pt-4">
+        <div className="flex flex-wrap items-baseline justify-between gap-2">
+          <span className={label} aria-live="polite">
             {progressLabel}
           </span>
-          <span className="num caption">{pct}%</span>
+          <span className={cn(mono12, "text-bone-2")}>{pct}%</span>
         </div>
         <div
-          className={styles.progressTrack}
+          className="relative h-px w-full bg-rule-2"
           role="progressbar"
           aria-label="Benchmark progress"
           aria-valuemin={0}
           aria-valuemax={100}
           aria-valuenow={pct}
         >
-          <div className={styles.progressFill} style={{ width: `${pct}%`, backgroundPosition: `${pct}% 0` }} />
+          <div className="absolute -top-px left-0 h-[3px] bg-bone transition-[width] duration-300" style={{ width: `${pct}%` }} />
         </div>
       </div>
     </div>

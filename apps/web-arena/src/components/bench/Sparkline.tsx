@@ -12,7 +12,7 @@ export function Sparkline({
   label?: string;
 }) {
   if (values.length < 2) {
-    return <span className="caption">No data</span>;
+    return <span className="font-sans text-[12.5px] text-bone-3">No data</span>;
   }
   let min = Infinity;
   let max = -Infinity;
