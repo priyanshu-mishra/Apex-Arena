@@ -4,6 +4,8 @@ export type RealData = {
   ticks: 300;
   scenario: "flash-crash";
   hash: string;
+  /** The five verify runs' SHA-256 state hashes, in run order. */
+  hashes: string[];
   hashesEqual: boolean;
   mid: number;
   asks: [price: number, size: number][];
@@ -22,6 +24,8 @@ export type RealData = {
 };
 
 const PIPS = 1e8;
+/** `apex-tui --verify-determinism` makes five runs. */
+export const PROOF_RUNS = 5;
 const DEFAULT_LAMBDA_CALM = 0.2;
 
 const isObj = (v: unknown): v is Record<string, unknown> => typeof v === "object" && v !== null;
@@ -74,7 +78,8 @@ export function parseTui(snapshot: unknown, verify: unknown, calm?: unknown): Re
   });
 
   const hashes = arr(verify, "hashes");
-  if (typeof hashes[0] !== "string") throw new Error('apex-tui: missing "hashes"');
+  if (hashes.length === 0 || !hashes.every((h): h is string => typeof h === "string" && h.length > 0))
+    throw new Error('apex-tui: missing "hashes"');
   if (typeof verify.all_equal !== "boolean") throw new Error('apex-tui: missing "all_equal"');
 
   const lambdaCalm =
@@ -87,6 +92,7 @@ export function parseTui(snapshot: unknown, verify: unknown, calm?: unknown): Re
     ticks: 300,
     scenario: "flash-crash",
     hash: hashes[0],
+    hashes,
     hashesEqual: verify.all_equal,
     mid: num(snapshot, "clob_mid_price") / PIPS,
     asks,
@@ -94,3 +100,20 @@ export function parseTui(snapshot: unknown, verify: unknown, calm?: unknown): Re
     leaderboard,
   };
 }
+
+/**
+ * Why a verify run must not become the shipped proof, or `null` when it may:
+ * the engine has to report `all_equal` and five hashes that really are equal.
+ */
+export function proofRefusal(verify: unknown): string | null {
+  if (!isObj(verify)) return "verify output is not an object";
+  if (verify.all_equal !== true) return "verify run did not report all_equal";
+  const hashes = verify.hashes;
+  if (!Array.isArray(hashes) || hashes.length !== PROOF_RUNS) return `verify run did not report ${PROOF_RUNS} hashes`;
+  if (!hashes.every((h) => typeof h === "string" && h.length > 0 && h === hashes[0]))
+    return `the ${PROOF_RUNS} hashes are not identical`;
+  return null;
+}
+
+/** Each run's agreement with run 1 (the proof rows' "match" / "differs"). */
+export const runMatches = (hashes: readonly string[]): boolean[] => hashes.map((h) => h === hashes[0]);

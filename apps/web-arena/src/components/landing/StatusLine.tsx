@@ -2,15 +2,13 @@
 
 import { useEffect, useRef } from "react";
 import { STATUS } from "@/content/landing";
+import { INITIAL_STATUS as INITIAL } from "@/lib/canyon/status";
 import { useCanyon } from "@/lib/canyon/store";
 import s from "./landing.module.css";
 
 const fmt = (n: number, d = 2) =>
   n.toLocaleString("en-US", { minimumFractionDigits: d, maximumFractionDigits: d });
 const tick = (n: number) => String(Math.max(0, Math.floor(n)) % 1_000_000).padStart(6, "0");
-
-/** Initial values match the scene's starting status (and the no-WebGL fallback). */
-const INITIAL = { tick: 0, mid: 2241.5, spreadBps: 4, lambda: 0.2, regime: "calm" };
 
 /**
  * The persistent status line. Fed by `scene.status` at 4 Hz through direct

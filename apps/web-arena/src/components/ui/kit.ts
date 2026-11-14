@@ -61,9 +61,9 @@ export const input =
   "h-[34px] w-full min-w-0 rounded-[2px] border border-rule-2 bg-ink px-3 font-mono text-[13px] text-bone tabular-nums [font-variation-settings:'wdth'_87.5] outline-none transition-colors placeholder:text-bone-3 hover:border-bone-3 focus-visible:border-bone disabled:opacity-50 aria-invalid:border-ask";
 export const select = cn(input, "appearance-none bg-[length:10px] bg-[right_10px_center] bg-no-repeat pr-8 font-sans text-[13.5px] [font-variation-settings:'wdth'_100]", "bg-[url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%23A8A69F' stroke-width='1.2'/%3E%3C/svg%3E\")]");
 export const textarea = cn(input, "h-auto py-2 leading-[1.5]");
-/** Range input: 1px track, bone 10×22 thumb, 2px radius (landing order control). */
+/** Range input: 1px track, bone 14×28 thumb, 2px radius (landing order control). */
 export const range =
-  "h-[22px] w-full cursor-pointer appearance-none bg-transparent [&::-webkit-slider-runnable-track]:h-px [&::-webkit-slider-runnable-track]:bg-rule-2 [&::-webkit-slider-thumb]:-mt-[10.5px] [&::-webkit-slider-thumb]:h-[22px] [&::-webkit-slider-thumb]:w-[10px] [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-[2px] [&::-webkit-slider-thumb]:bg-bone [&::-moz-range-track]:h-px [&::-moz-range-track]:bg-rule-2 [&::-moz-range-thumb]:h-[22px] [&::-moz-range-thumb]:w-[10px] [&::-moz-range-thumb]:rounded-[2px] [&::-moz-range-thumb]:border-0 [&::-moz-range-thumb]:bg-bone";
+  "h-[28px] w-full cursor-pointer appearance-none bg-transparent [&::-webkit-slider-runnable-track]:h-px [&::-webkit-slider-runnable-track]:bg-rule-2 [&::-webkit-slider-thumb]:-mt-[14px] [&::-webkit-slider-thumb]:h-[28px] [&::-webkit-slider-thumb]:w-[14px] [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-[2px] [&::-webkit-slider-thumb]:bg-bone [&::-moz-range-track]:h-px [&::-moz-range-track]:bg-rule-2 [&::-moz-range-thumb]:h-[28px] [&::-moz-range-thumb]:w-[14px] [&::-moz-range-thumb]:rounded-[2px] [&::-moz-range-thumb]:border-0 [&::-moz-range-thumb]:bg-bone";
 
 /** Field wrapper and its label row. */
 export const field = "flex min-w-0 flex-col gap-1.5";
@@ -88,9 +88,6 @@ export const TONE: Record<Tone, string> = {
   regime: "var(--shock)",
 };
 export const toneColor = (t: Tone | undefined) => (t ? TONE[t] : "var(--bone-3)");
-
-/** Signed value colour: mint up, vermilion down. */
-export const signColor = (v: number) => (v > 0 ? "var(--bid)" : v < 0 ? "var(--ask)" : undefined);
 
 /** Small square data dot (the regime dot of the status line). */
 export const dot = "inline-block size-[7px] shrink-0 rounded-[1px]";

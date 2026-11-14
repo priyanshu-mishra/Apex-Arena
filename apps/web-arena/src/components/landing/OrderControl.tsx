@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { COPY } from "@/content/landing";
-import { walkAsks } from "@/lib/canyon/ladder";
+import { ORDER_MAX_ETH, walkAsks } from "@/lib/canyon/ladder";
 import { REAL } from "@/lib/canyon/real";
 import { useCanyon } from "@/lib/canyon/store";
 import { cn } from "@/lib/utils";
@@ -11,7 +11,7 @@ import { Readout } from "./Readout";
 
 const c = COPY.c1;
 const MIN = 1;
-const MAX = 45;
+const MAX = ORDER_MAX_ETH;
 const START = 12;
 
 const fmt = (n: number, d = 2) =>

@@ -24,7 +24,7 @@ const BTN =
  * and the verdict "n / 5 identical" that turns mint when every row is lit.
  * Under 860px the hash is shortened and the "match" column drops.
  *
- * `matches` (the app's live check) marks each run against run 1: a run that
+ * `matches` marks each run against run 1: a run that
  * differs reads "differs" in vermilion, the verdict counts the matching runs
  * and turns vermilion when any run differs.
  */
@@ -43,7 +43,7 @@ export function HashRows({
   label?: string;
   /** Shown between the verdict and the button (the landing's Precise line). */
   note?: ReactNode;
-  /** Per-run agreement with run 1; omitted on the landing, where every run matches. */
+  /** Per-run agreement with run 1 (the landing passes real.json's, the app its live check). */
   matches?: boolean[];
 }) {
   const all = hashes.length > 0 && lit >= hashes.length;

@@ -23,7 +23,6 @@ export function Stage({
   heightVh,
   className,
   stageClassName,
-  label,
   children,
 }: {
   id: string;
@@ -31,8 +30,6 @@ export function Stage({
   heightVh: number;
   className?: string;
   stageClassName?: string;
-  /** Accessible name for the chapter region. */
-  label?: string;
   children?: ReactNode;
 }) {
   const tall = heightVh > 100;
@@ -40,7 +37,6 @@ export function Stage({
   return (
     <section
       id={id}
-      aria-label={label}
       data-h={heightVh}
       className={cn(s.chapter, tall && s.sticky, className)}
       style={style}

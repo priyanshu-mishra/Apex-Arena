@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import { COPY } from "@/content/landing";
+import { BASE_MID } from "@/lib/canyon/status";
 import { useCanyon } from "@/lib/canyon/store";
 import s from "./landing.module.css";
 import { Readout } from "./Readout";
@@ -9,8 +10,10 @@ import { Readout } from "./Readout";
 const c = COPY.c2;
 /** Arbitrage opens once the gap clears the 30 bps pool fee. */
 const FEE_BPS = 30;
-/** Shown before the scene mounts and without WebGL (the prototype's opening values). */
-const INITIAL = { clob: 2241.5, pool: 2236.1 };
+/** The prototype's opening pool price sits 24 bps under the book. */
+const OPENING_GAP_BPS = -24;
+/** Shown before the scene mounts and without WebGL: the scene's base price and that opening pool. */
+const INITIAL = { clob: BASE_MID, pool: BASE_MID * (1 + OPENING_GAP_BPS / 1e4) };
 
 const fmt = (n: number, d = 2) =>
   n.toLocaleString("en-US", { minimumFractionDigits: d, maximumFractionDigits: d });

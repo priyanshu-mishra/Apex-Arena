@@ -6,6 +6,7 @@ import { stagingTable } from "@/lib/canyon/chapters";
 import { LEN, NL, SPAN, W, lvl, market } from "@/lib/canyon/model";
 import type { CanyonScene, Projected } from "@/lib/canyon/scene";
 import { canyonState, useCanyon } from "@/lib/canyon/store";
+import { onFontsSettled } from "@/lib/fontsSettled";
 import { cn } from "@/lib/utils";
 
 type Tone = "agent" | "note" | "bid" | "ask" | "pool";
@@ -166,12 +167,21 @@ const hits = (boxes: Box[], l: number, t: number, r: number, b: number) =>
 export function SceneLabels({ scene }: { scene: CanyonScene }) {
   const precise = useCanyon((s) => s.depth === "precise");
   const els = useRef<(HTMLDivElement | null)[]>([]);
-  /** Label widths, measured once per Plain / Precise text. */
+  /** Label widths, measured once per Plain / Precise text and again once web fonts have loaded. */
   const widths = useRef<number[]>([]);
 
   useEffect(() => {
     widths.current = [];
   }, [precise]);
+
+  // Widths taken before Martian Mono arrives are fallback-font widths: drop them so the next frame re-measures.
+  useEffect(
+    () =>
+      onFontsSettled(() => {
+        widths.current = [];
+      }),
+    [],
+  );
 
   useEffect(() => {
     const rm = scene.reducedMotion;

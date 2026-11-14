@@ -27,7 +27,7 @@ export function TopBar({ variant = "landing" }: { variant?: "landing" | "gate" }
 function GateTopBar() {
   return (
     <header className={cn(s.top, s.topGate)}>
-      <Link className={s.mark} href="/" aria-label={`${TOP_BAR.wordmark}, ${GATE.back.toLowerCase()}`}>
+      <Link className={s.mark} href="/" aria-label={`${TOP_BAR.wordmark}, home`}>
         <CanyonGlyph />
         {TOP_BAR.wordmark}
       </Link>

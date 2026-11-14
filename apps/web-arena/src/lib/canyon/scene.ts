@@ -9,7 +9,8 @@ import { AGENTS, POOL_ORIGIN, POOL_SCALE, SCORE_X } from "./cast";
 import { blendChapter, stagingTable, type ChapterState, type Vec3 } from "./chapters";
 import { createDprGovernor, stepDprGovernor } from "./dprGovernor";
 import { LEN, NEV, NL, SPAN, W, lambda, lvl, market, midBase, type MarketEvent } from "./model";
-import { REAL } from "./real";
+import { realAcs } from "./real";
+import { BASE_MID, INITIAL_STATUS } from "./status";
 import { COPY_DIM, COPY_FEATHER, MAX_COPY, copyMaskAt, type CopyBox, type CopySource } from "./copy";
 import { canyonState, drainCanyonInbox, useCanyon, type CanyonStore, type Mood } from "./store";
 import { buildBackground } from "./objects/background";
@@ -102,15 +103,15 @@ export class CanyonScene {
   private evi = 0;
   private m = { cx: 0, hs: 0.16, sh: 0 };
   private lam = 0.2;
-  private clob = 2241.5;
-  private pool = 2241.5;
+  private clob = BASE_MID;
+  private pool = BASE_MID;
   private gapBps = 0;
   private beadR = 1;
   private heat = 0;
   private regime: Regime = "calm";
   private regimeUntil = 0;
   private whaleT = -1e4;
-  private readonly _status: SceneStatus = { tick: 0, mid: 2241.5, spreadBps: 4, lambda: 0.2, regime: "calm", pool: 2241.5, gapBps: 0 };
+  private readonly _status: SceneStatus = { ...INITIAL_STATUS };
 
   /* agents, bead, slug */
   private readonly agents: Agent[];
@@ -181,7 +182,7 @@ export class CanyonScene {
     this.agents = AGENTS.map((a, i) => ({
       llm: a.llm,
       hero: a.hero,
-      score: [SCORE_X[i], i < 4 ? 0.3 + (REAL.leaderboard.find((r) => r.agentId === a.name)?.acs ?? 0) * 5.4 : 1.0, 3] as Vec3,
+      score: [SCORE_X[i], i < 4 ? 0.3 + realAcs(a.name) * 5.4 : 1.0, 3] as Vec3,
       p: new THREE.Vector3(...a.hero),
       pulse: 0,
     }));
@@ -485,7 +486,7 @@ export class CanyonScene {
   private sim(): void {
     this.m = market(this.T, this.events);
     this.lam = lambda(this.T, this.events);
-    const clob = 2241.5 + this.m.cx * 14;
+    const clob = BASE_MID + this.m.cx * 14;
     const wdt = this.T - this.whaleT;
     const whale = wdt > 0 ? -0.021 * Math.exp(-wdt * 0.45) : 0;
     const pool = clob * (1 + 0.0021 * Math.sin(this.T * 0.37) + 0.0015 * Math.sin(this.T * 0.91 + 2) + whale);
@@ -721,7 +722,7 @@ export class CanyonScene {
 
     const s = this._status;
     s.tick = b.run ? Math.max(0, Math.floor((this.T - START_T) * 100)) : 0;
-    s.mid = 2241.5 + midBase(this.T) * 14;
+    s.mid = BASE_MID + midBase(this.T) * 14;
     s.pool = s.mid;
     this.afterRender();
   }

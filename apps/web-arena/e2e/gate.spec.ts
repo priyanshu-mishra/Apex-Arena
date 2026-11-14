@@ -40,6 +40,9 @@ test("gate boots then offers entry", async ({ page }) => {
   const errors = collectErrors(page);
   await page.goto("/enter");
   await expect(page.getByRole("link", { name: "Back to the overview", exact: true })).toHaveAttribute("href", "/");
+  // The wordmark has a name of its own: only one link answers to "back to the overview".
+  await expect(page.getByRole("link", { name: "ApexArena, home", exact: true })).toHaveAttribute("href", "/");
+  await expect(page.getByRole("link", { name: /back to the overview/i })).toHaveCount(1);
   // The 2.6 s boot starts once the scene is up.
   await page.waitForSelector('canvas[data-canyon="gate"][data-state="running"]', { timeout: 30_000 });
   await expect(page.getByTestId("gate-state")).toHaveText("starting");

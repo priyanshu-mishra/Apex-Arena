@@ -58,6 +58,16 @@ test("status line is a quiet live region", async ({ page }) => {
   await expect(status).toContainText("simulated in your browser");
 });
 
+test("status lines open on the engine's ETH price, the one chapter 01 shows", async ({ request }) => {
+  for (const path of ["/", "/enter"]) {
+    const html = await (await request.get(path)).text();
+    expect(html, path).not.toContain("2,241.50");
+    const at = html.indexOf('aria-label="Market status"');
+    expect(at, path).toBeGreaterThan(0);
+    expect(html.slice(at, at + 2500), path).toContain(">2,142.31<");
+  }
+});
+
 test("chapters have the guide's heights", async ({ page }) => {
   await page.goto("/?rm");
   const heights = await page.evaluate(() =>

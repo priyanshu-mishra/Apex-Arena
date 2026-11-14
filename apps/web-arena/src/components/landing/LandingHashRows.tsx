@@ -2,7 +2,7 @@
 
 import { type ReactNode, useEffect, useState } from "react";
 import { CHAPTER_IDS, COPY } from "@/content/landing";
-import { REAL } from "@/lib/canyon/real";
+import { REAL, runMatches } from "@/lib/canyon/real";
 import { type CanyonStore, useCanyon } from "@/lib/canyon/store";
 import { HashRows, PENDING_HASH } from "./HashRows";
 
@@ -18,11 +18,14 @@ const litFor = (st: CanyonStore, n: number) =>
       ? n
       : 0;
 
-const RUNS = 5;
+/** The engine's verify runs, as shipped in real.json, and each one's agreement with run 1. */
+const RUNS = REAL.hashes.length;
+const MATCHES = runMatches(REAL.hashes).map((m) => m && REAL.hashesEqual);
 
 /**
  * The landing's 06 Proof rows, lit by scroll: each run shows a dotted
- * placeholder until it lights, then the real hash (the app's empty state).
+ * placeholder until it lights, then that run's real hash (the app's empty
+ * state). The verdict counts the runs that actually match run 1.
  */
 export function LandingHashRows({ note }: { note?: ReactNode }) {
   const [lit, setLit] = useState(0);
@@ -31,6 +34,6 @@ export function LandingHashRows({ note }: { note?: ReactNode }) {
     setLit(litFor(useCanyon.getState(), RUNS));
     return useCanyon.subscribe((st) => setLit(litFor(st, RUNS)));
   }, []);
-  const hashes = Array.from({ length: RUNS }, (_, i) => (i < lit ? REAL.hash : PENDING_HASH));
-  return <HashRows hashes={hashes} lit={lit} verdictHref={c.verifyHref} note={note} />;
+  const hashes = REAL.hashes.map((h, i) => (i < lit ? h : PENDING_HASH));
+  return <HashRows hashes={hashes} lit={lit} matches={MATCHES} verdictHref={c.verifyHref} note={note} />;
 }

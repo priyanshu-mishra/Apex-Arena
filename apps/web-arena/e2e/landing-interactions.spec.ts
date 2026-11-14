@@ -80,6 +80,9 @@ test("proof rows reach five of five", async ({ page }) => {
   await expect(c6.getByTestId("verdict")).toHaveText("0 / 5 identical");
   await scrollChapterTo(page, "c6", 0.6);
   await expect(c6.getByTestId("verdict")).toHaveText("5 / 5 identical");
+  // The verdict comes from real.json's five hashes, each checked against run 1.
+  await expect(c6.getByText("differs", { exact: true })).toHaveCount(0);
+  await expect(c6.getByText("match", { exact: true })).toHaveCount(5);
   await expect(c6.getByRole("link", { name: "Verify it yourself in the app" })).toHaveAttribute(
     "href",
     "/app/proof",

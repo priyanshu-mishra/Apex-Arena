@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { archivo, martianMono } from "@/lib/fonts";
+import { fontSupplementCss } from "@/lib/fontSupplements";
 import { TooltipProvider } from "@/components/ui/shadcn/tooltip";
 import "./globals.css";
 
@@ -24,11 +25,15 @@ export const viewport: Viewport = {
  */
 const PREPAINT = `(function(){var d=document.documentElement;try{if(!matchMedia("(prefers-reduced-motion: reduce)").matches&&!/[?&]rm(=|&|$)/.test(location.search)){d.setAttribute("data-motion","");setTimeout(function(){if(!window.__apexMotion)d.removeAttribute("data-motion")},6000)}if(localStorage.getItem("apex-depth")==="precise")d.dataset.depth="precise"}catch(e){}})();`;
 
+/** Symbol supplements under the configured base path (GitHub Pages). */
+const SUPPLEMENTS = fontSupplementCss(process.env.NEXT_PUBLIC_BASE_PATH ?? "");
+
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" className={`${archivo.variable} ${martianMono.variable}`} suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: PREPAINT }} />
+        <style dangerouslySetInnerHTML={{ __html: SUPPLEMENTS }} />
       </head>
       <body>
         <TooltipProvider>{children}</TooltipProvider>

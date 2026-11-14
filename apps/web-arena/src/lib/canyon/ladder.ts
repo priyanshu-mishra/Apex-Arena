@@ -5,6 +5,9 @@ export type WalkResult = {
   levelsCleared: number;
 };
 
+/** The landing order control's largest buy (ETH); the real ask ladder must hold at least this much. */
+export const ORDER_MAX_ETH = 45;
+
 /** Walk a market buy of `qty` up the ask ladder; impact uses the last touched price. */
 export function walkAsks(
   qty: number,
