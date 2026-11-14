@@ -5,8 +5,8 @@
  */
 
 .root {
-  --sans: var(--font-archivo), system-ui, -apple-system, "Segoe UI", sans-serif;
-  --mono: var(--font-martian), ui-monospace, "SF Mono", Menlo, monospace;
+  --sans: "Archivo Symbols", var(--font-archivo), system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono: "Martian Mono Symbols", var(--font-martian), ui-monospace, "SF Mono", Menlo, monospace;
   --m: clamp(16px, 3.9vw, 56px); /* page margin */
   --rail: clamp(0px, 5vw, 72px); /* left chapter rail */
   --hud: 38px;

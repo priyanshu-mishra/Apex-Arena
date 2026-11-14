@@ -2,6 +2,33 @@
 @import "tw-animate-css";
 @import "../styles/tokens.css";
 
+/*
+ * Symbol supplements. next/font's Google subsets (latin, latin-ext, …) leave
+ * out the arrows, math signs and super/subscript digits the copy uses
+ * ("seed 42 → 5/5", "≈", "10⁸"), so the browser drew them in a system font.
+ * These files are the same variable fonts (wdth + wght axes) cut to just
+ * those glyphs; copyright and the SIL OFL 1.1 notice stay in each file's name
+ * table. Each leads its family's stack, limited by unicode-range, so it draws
+ * only the characters it has and everything else falls through.
+ */
+@font-face {
+  font-family: "Archivo Symbols";
+  src: url("/fonts/archivo-symbols.woff2") format("woff2");
+  font-weight: 100 900;
+  font-stretch: 62% 125%;
+  font-display: swap;
+  unicode-range: U+0394, U+03BC, U+2078, U+2081-2085, U+2190, U+2192, U+2194, U+221A, U+2248, U+2264-2265;
+}
+
+@font-face {
+  font-family: "Martian Mono Symbols";
+  src: url("/fonts/martian-symbols.woff2") format("woff2");
+  font-weight: 100 800;
+  font-stretch: 75% 112.5%;
+  font-display: swap;
+  unicode-range: U+2078, U+2081-2085, U+2190, U+2192, U+2248;
+}
+
 @theme inline {
   --color-ink: var(--ink);
   --color-ink-2: var(--ink-2);
@@ -18,8 +45,8 @@
   --color-shock: var(--shock);
   --color-grey: var(--grey);
 
-  --font-sans: var(--font-archivo), ui-sans-serif, sans-serif;
-  --font-mono: var(--font-martian), ui-monospace, monospace;
+  --font-sans: "Archivo Symbols", var(--font-archivo), ui-sans-serif, sans-serif;
+  --font-mono: "Martian Mono Symbols", var(--font-martian), ui-monospace, monospace;
 
   --color-background: var(--background);
   --color-foreground: var(--foreground);
