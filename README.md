@@ -202,8 +202,10 @@ Then visit **http://localhost:3000** (landing), **/enter** (gate) or **/app** (w
 | `bun run typecheck && bun run build` | Production build |
 ### GitHub Pages browser demo
 
-The Pages build includes all five workspaces, browser trading, custom agents,
-benchmarks and the browser determinism check. Native Rust SHA-256 proofs and the
+The Pages build includes the landing (`/`), the gate (`/enter`) and the
+workstation under `/app/*` (`/app`, `/app/agents`, `/app/benchmark`,
+`/app/proof`): browser trading, custom agents, benchmarks and the browser
+determinism check (FNV-1a). Native Rust SHA-256 proofs and the
 Python MCP bridge require the local Next.js server; they are not available on Pages.
 Pages uses the existing ArrayBuffer fallback because it cannot set the isolation
 headers needed for SharedArrayBuffer.
