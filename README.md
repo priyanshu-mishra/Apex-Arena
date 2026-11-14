@@ -11,9 +11,9 @@
 [![Determinism](https://img.shields.io/badge/determinism-5%2F5%20identical%20SHA--256-10B981)](scripts/verify_determinism_hook.sh)
 [![License: MIT](https://img.shields.io/badge/license-MIT-A855F7)](Cargo.toml)
 
-<img src="docs/screenshots/arena.png" alt="The ApexArena live trading workstation: order book, price chart, agent leaderboard and the market's current regime" width="100%"/>
+<img src="docs/screenshots/landing.png" alt="The ApexArena landing page: a WebGL canyon of order-book depth with the AI agents trading on it, under the title &quot;A market that fights back.&quot;" width="100%"/>
 
-**[What it is](#-in-plain-english)** · **[Why it matters](#-why-backtests-lie-to-ai-agents)** · **[How it works](#%EF%B8%8F-how-it-works)** · **[Tour the app](#%EF%B8%8F-the-five-workspaces)** · **[Run it](#-quick-start)** · **[Build an agent](#-plug-in-your-own-agent)**
+**[What it is](#-in-plain-english)** · **[Why it matters](#-why-backtests-lie-to-ai-agents)** · **[How it works](#%EF%B8%8F-how-it-works)** · **[Tour the app](#%EF%B8%8F-the-web-app)** · **[Run it](#-quick-start)** · **[Build an agent](#-plug-in-your-own-agent)**
 
 </div>
 
@@ -23,7 +23,7 @@
 
 | You are… | Start here | You'll get |
 |---|---|---|
-| **Curious, non-technical** (investor, student, recruiter) | [In plain English](#-in-plain-english) → [the five workspaces](#%EF%B8%8F-the-five-workspaces) | What the project does and why it's hard, without jargon |
+| **Curious, non-technical** (investor, student, recruiter) | [In plain English](#-in-plain-english) → [the web app](#%EF%B8%8F-the-web-app) | What the project does and why it's hard, without jargon |
 | **A quant or trader** | [Why backtests lie](#-why-backtests-lie-to-ai-agents) → [The score](#-the-apex-composite-score-acs) | The market model, regimes, and how agents are graded |
 | **A software / ML engineer** | [How it works](#%EF%B8%8F-how-it-works) → [Quick start](#-quick-start) → [Repository map](#-repository-map) | Architecture, invariants, and a running system in ~5 minutes |
 | **An AI-agent builder** | [Plug in your own agent](#-plug-in-your-own-agent) | The MCP tools and Python SDK your agent will call |
@@ -78,7 +78,7 @@ flowchart LR
     subgraph WEB["🖥️ Web workstation — Next.js 15"]
         API["/api/arena route"]
         W["WebWorker simulation<br/>SharedArrayBuffer"]
-        UI["5 workspaces"]
+        UI["Landing + 4 app pages"]
     end
     K --> TUI & PY
     API -- execFile --> TUI
@@ -138,17 +138,19 @@ $$
 
 ---
 
-## 🖥️ The five workspaces
+## 🖥️ The web app
 
-The web app (`apps/web-arena`) is the friendliest way in. Switch views with the keys **1–5**, open the command palette with **⌘K / Ctrl+K**, pause with **Space**. Every panel has a **?** button that explains what you're looking at, how to use it, and the maths underneath.
+The web app (`apps/web-arena`) is the friendliest way in. It opens on a landing page that tells the story in ten short chapters over a live WebGL "canyon" of order-book depth, then a loading gate (`/enter`) hands you to the workstation. In the workstation, switch pages with the keys **1–4**, open the command palette with **⌘K / Ctrl+K**, pause with **Space** and step one tick with **.**. A **Simple / Pro** switch in the top bar picks how much you see: Simple shows the story panels, Pro adds every advanced readout. Every panel has a **?** button that explains what you're looking at and the maths underneath.
 
-| | |
+| Route | |
 |---|---|
-| <img src="docs/screenshots/overview.png" alt="Overview and guided tour"/> **1 · Overview & tour** — a live market card and a five-step, hands-on walkthrough ("Zero to quant in 60 seconds"). | <img src="docs/screenshots/arena.png" alt="Live trading arena"/> **2 · Live trading arena** — order book, multi-mode chart, order ticket, AMM swaps, one-click arbitrage, stress lab, ACS leaderboard. |
-| <img src="docs/screenshots/agent-lab.png" alt="Agent lab"/> **3 · Agent lab** — the 1-second barrier, the exact `MacroDigest` JSON, LLM reasoning traces with their JSON-RPC calls, and a custom-agent builder. | <img src="docs/screenshots/benchmark.png" alt="Benchmark suite"/> **4 · Chaos benchmark** — a four-stage stress tournament, S–F grades, per-stage heatmap, JSON and printable reports. |
-| <img src="docs/screenshots/architecture.png" alt="Architecture"/> **5 · Architecture** — clickable system diagram, AMM-vs-CLOB arbitrage simulator, ACS calculator. | <img src="docs/screenshots/determinism-proof.png" alt="Determinism proof"/> **Proof console** — runs the real Rust binary from your browser: five runs, five identical SHA-256 hashes. |
+| `/` | <img src="docs/screenshots/landing.png" alt="Landing page hero"/> **Landing** — ten chapters over the live canyon: place an order and watch it eat the book, crash the market, see the one-second barrier, the score, and five identical hashes. A **Plain / Precise** toggle swaps every explanation for the exact maths. Add `?rm` for the reduced-motion version. |
+| `/app` | <img src="docs/screenshots/arena.png" alt="Arena page"/> **1 · Arena** — order book, candle chart of the order book against the revm pool, order ticket and leaderboard; Pro adds the readout strip, equity / drawdown / Hawkes λ(t) charts, AMM swaps, one-click arbitrage and the stress lab. |
+| `/app/agents` | <img src="docs/screenshots/agent-lab.png" alt="Agents page"/> **2 · Agents** — LLM reasoning traces with the tool calls they sent, and a custom-agent builder; Pro adds the exact `MacroDigest` JSON, the 1-second barrier and a head-to-head. |
+| `/app/benchmark` | <img src="docs/screenshots/benchmark.png" alt="Benchmark page"/> **3 · Benchmark** — a four-stage stress tournament on one deterministic kernel, scored on the Apex Composite Score, with JSON and printable reports. |
+| `/app/proof` | <img src="docs/screenshots/determinism-proof.png" alt="Proof page"/> **4 · Proof** — runs the real Rust binary from your browser: five runs, five identical SHA-256 hashes. Pro adds the verification console, the clickable system diagram (<img src="docs/screenshots/architecture.png" alt="Architecture diagram" width="30%"/>), the AMM-vs-CLOB arbitrage simulator and the ACS calculator. |
 
-> A live **narrative bar** translates raw telemetry into a sentence ("Whale dump hit the Revm pool…"), and a thin band at the top recolors with the current regime — so a first-time visitor always knows what the market is doing.
+> A live **narrative line** translates raw telemetry into a sentence ("Whale dump hit the Revm pool…"), and the header's horizon light warms with the current regime, so a first-time visitor always knows what the market is doing.
 
 ---
 
@@ -190,7 +192,14 @@ cargo build -p apex-tui            # the web app's proof console calls this bina
 cd apps/web-arena && bun install && bun run dev
 ```
 
-Then visit **http://localhost:3000**. For a production build: `bun run typecheck && bun run build`.
+Then visit **http://localhost:3000** (landing), **/enter** (gate) or **/app** (workstation). Useful scripts, all run from `apps/web-arena`:
+
+| Command | What it does |
+|---|---|
+| `bun run gen:real` | Regenerates `src/lib/canyon/real.json`, every engine figure the landing shows, from `target/debug/apex-tui` (also runs before each build; it never fails the build) |
+| `bun run test` | Vitest unit tests |
+| `bun run test:e2e` | Playwright end-to-end tests (starts the dev server, or reuses one already on :3000) |
+| `bun run typecheck && bun run build` | Production build |
 ### GitHub Pages browser demo
 
 The Pages build includes all five workspaces, browser trading, custom agents,
@@ -273,7 +282,7 @@ Apex-Arena/
 │   ├── apex-tui/       Ratatui terminal UI, --json and --verify-determinism CLI
 │   └── apex-py/        PyO3 bindings (_core)
 ├── sdks/python/apex_arena/   Python SDK, agents, CLI, MCP JSON-RPC server
-├── apps/web-arena/           Next.js 15 workstation (5 workspaces, WebWorker sim, API bridge)
+├── apps/web-arena/           Next.js 15 web app (landing, gate, 4-page workstation, WebWorker sim, API bridge)
 ├── scripts/                  determinism gate
 └── docs/screenshots/         images used in this README
 ```
@@ -307,7 +316,7 @@ Apex-Arena/
 
 **Why does the browser show a different hash than Rust?** The browser runs a JavaScript port for smooth interactivity with its own FNV-1a digest. The native Rust kernel is the source of truth and is what the proof console calls.
 
-**Can I add my own LLM?** Yes — point any MCP-capable client at the Python server, or subclass `ApexAgent` in the SDK. In the web app's Agent lab you can also configure and deploy a custom strategy live.
+**Can I add my own LLM?** Yes — point any MCP-capable client at the Python server, or subclass `ApexAgent` in the SDK. On the web app's Agents page you can also configure and deploy a custom strategy live.
 
 **Why fixed-point instead of floats?** Floating-point rounding can differ across machines, which would break bit-for-bit replay. Integers with `SCALE = 10^8` never do.
 
@@ -322,7 +331,7 @@ Issues and pull requests are welcome. Before opening a PR:
 ```bash
 ./scripts/verify_determinism_hook.sh
 PYTHONPATH=sdks/python uv run --with pytest pytest sdks/python/tests/test_sdk_and_mcp.py -v
-cd apps/web-arena && bun run typecheck && bun run build
+cd apps/web-arena && bun run typecheck && bun run test && bun run build && bun run test:e2e
 ```
 
 Any change that alters the seed-42 state hash must explain why in the PR description.
