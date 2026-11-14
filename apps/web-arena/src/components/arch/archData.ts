@@ -51,12 +51,12 @@ export const NODES: ArchNode[] = [
   {
     id: "views",
     label: "React views",
-    sub: "Five workstation views",
+    sub: "Landing + four app pages",
     layer: "web",
     tone: "neutral",
     x: 40, y: 64, w: 200, h: 64,
     what:
-      "The five workstation views. They render at display rate from the latest telemetry frame published by ArenaProvider and send every user command (orders, swaps, scenario injections, agent deploys) back to the worker as a typed message.",
+      "The landing page and the four app pages (Arena, Agents, Benchmark, Proof). The app pages render at display rate from the latest telemetry frame published by ArenaProvider and send every user command (orders, swaps, scenario injections, agent deploys) back to the worker as a typed message.",
     invariants: [
       "Never mutate simulation state directly — only post WorkerCommand messages.",
       "Chart series receive strictly ascending, de-duplicated timeSec values (lightweight-charts v5 asserts on duplicates).",
