@@ -136,7 +136,9 @@ test("no text under 12px", async ({ page }) => {
 /**
  * Sweeps the whole page and, at every step, checks each line of copy that
  * reaches the top bar's band: the mask on its block must have it at zero
- * alpha there. Returns the offending lines.
+ * alpha there. Glyph ink counts, not just line boxes: once a line's baseline
+ * is inside the band, its descenders (measured from the font) must be clear
+ * too. Returns the offending lines.
  */
 async function copyUnderBar(page: import("@playwright/test").Page, step: number) {
   return page.evaluate(async (stride) => {
@@ -146,6 +148,20 @@ async function copyUnderBar(page: import("@playwright/test").Page, step: number)
     const max = document.documentElement.scrollHeight - innerHeight;
     const bad: string[] = [];
     const texts: Text[] = [];
+    const ctx = document.createElement("canvas").getContext("2d")!;
+    /** Font descent (content-area bottom → baseline) and the text's ink descent, px. */
+    const metrics = new Map<Text, { font: number; ink: number }>();
+    const metricsOf = (t: Text) => {
+      let m = metrics.get(t);
+      if (!m) {
+        const cs = getComputedStyle(t.parentElement!);
+        ctx.font = `${cs.fontStyle} ${cs.fontWeight} ${cs.fontSize} ${cs.fontFamily}`;
+        const tm = ctx.measureText(t.textContent!);
+        m = { font: tm.fontBoundingBoxDescent, ink: tm.actualBoundingBoxDescent };
+        metrics.set(t, m);
+      }
+      return m;
+    };
     const walker = document.createTreeWalker(document.querySelector("main")!, NodeFilter.SHOW_TEXT);
     for (let n = walker.nextNode(); n; n = walker.nextNode()) if (n.textContent?.trim()) texts.push(n as Text);
     for (let y = 0; y <= max + stride; y += stride) {
@@ -157,18 +173,27 @@ async function copyUnderBar(page: import("@playwright/test").Page, step: number)
         range.selectNodeContents(t);
         for (const r of Array.from(range.getClientRects())) {
           if (r.width === 0 || r.top >= band || r.bottom <= 0) continue;
-          // Alpha at the lowest point of the line still inside the band (the worst case).
-          const at = Math.min(r.bottom, band);
           const block = t.parentElement!.closest<HTMLElement>("[data-bar-clip] > *");
-          let alpha = 1;
-          if (block?.hasAttribute("data-bar-clipping")) {
+          const alphaAt = (at: number) => {
+            if (!block?.hasAttribute("data-bar-clipping") || getComputedStyle(block).maskImage === "none") return 1;
             const top = block.getBoundingClientRect().top;
             const a = parseFloat(block.style.getPropertyValue("--bar-a"));
             const b = parseFloat(block.style.getPropertyValue("--bar-b"));
-            alpha = Math.min(1, Math.max(0, (at - (top + a)) / (b - a)));
-            if (getComputedStyle(block).maskImage === "none") alpha = 1;
+            return Math.min(1, Math.max(0, (at - (top + a)) / (b - a)));
+          };
+          const where = `y=${Math.min(y, max)}`;
+          const what = t.textContent!.trim().slice(0, 30);
+          // Alpha at the lowest point of the line still inside the band (the worst case).
+          const alpha = alphaAt(Math.min(r.bottom, band));
+          if (alpha > 0.02) bad.push(`${where} alpha=${alpha.toFixed(2)}: ${what}`);
+          // The line's body is under the bar: its descenders must not hang below it.
+          const m = metricsOf(t);
+          const baseline = r.bottom - m.font;
+          const ink = baseline + m.ink;
+          if (baseline < band && ink > band) {
+            const tail = alphaAt(ink);
+            if (tail > 0.02) bad.push(`${where} descender alpha=${tail.toFixed(2)}: ${what}`);
           }
-          if (alpha > 0.02) bad.push(`y=${Math.min(y, max)} alpha=${alpha.toFixed(2)}: ${t.textContent!.trim().slice(0, 30)}`);
         }
       }
     }
