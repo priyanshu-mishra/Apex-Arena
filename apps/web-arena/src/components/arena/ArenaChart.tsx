@@ -37,6 +37,8 @@ const shockA = (a: number) => `rgba(255,176,32,${a})`;
 
 /** Ticks per candle: one candle per 100 ms of virtual time. */
 const BUCKET = 10;
+/** Keep fitting while the chart holds only this many bars (the first ~1 s of candles). */
+const FIT_WHILE_UNDER = 12;
 
 type Datum = { time: UTCTimestamp; [k: string]: unknown };
 interface Spec {
@@ -288,6 +290,8 @@ export function ArenaChart() {
   const chartRef = useRef<IChartApi | null>(null);
   const seriesRef = useRef<Map<string, ISeriesApi<SeriesType>>>(new Map());
   const layoutKey = useRef<string>("");
+  /** Last data extent seen by the sync, to spot a reset (time went backwards or the history collapsed). */
+  const extent = useRef<{ bars: number; last: number }>({ bars: 0, last: 0 });
 
   const hist = useMemo(() => dedupe(history), [history]);
   const specs = useMemo(() => buildSpecs(mode, hist, showBasis), [mode, hist, showBasis]);
@@ -318,6 +322,8 @@ export function ArenaChart() {
       localization: { priceFormatter: (v: number) => v.toLocaleString("en-US", { maximumFractionDigits: 2 }) },
     });
     chartRef.current = chart;
+    // Dev / test hook: lets e2e read the visible range (never shipped in production builds).
+    if (process.env.NODE_ENV !== "production") (window as unknown as { __apexChart?: IChartApi }).__apexChart = chart;
     const ro = new ResizeObserver((entries) => {
       const r = entries[0]?.contentRect;
       if (r && r.width > 0 && r.height > 0) chart.applyOptions({ width: r.width, height: r.height });
@@ -419,9 +425,13 @@ export function ArenaChart() {
         panes[1].setStretchFactor(0.26);
       }
 
-      // Fit while the history is short (or after a reset shrank it); once it is long the chart scrolls with the market.
+      // Fit on a mode change, after a reset (time went backwards, or the history collapsed; the capped
+      // window sliding by a bar is not a reset) and while the first few candles arrive. Otherwise leave the user's pan / zoom alone; the chart follows new bars itself.
       const bars = Math.max(0, ...specs.map((sp) => sp.data.length));
-      if (modeChanged || bars <= 160) chart.timeScale().fitContent();
+      const last = Math.max(0, ...specs.map((sp) => Number(sp.data[sp.data.length - 1]?.time ?? 0)));
+      const reset = last < extent.current.last || bars < extent.current.bars / 2;
+      extent.current = { bars, last };
+      if (modeChanged || reset || bars <= FIT_WHILE_UNDER) chart.timeScale().fitContent();
       if (modeChanged) layoutKey.current = key;
     } catch {
       // A resize racing a series swap can throw once; the next frame resyncs.

@@ -230,7 +230,9 @@ export function AmmArbSimulator() {
         </div>
 
         <div className="flex min-w-0 flex-col gap-3.5">
-          <svg className="block h-auto w-full rounded-[2px] border border-rule bg-ink" viewBox={`0 0 ${W} ${H}`} role="img" aria-label={`Constant product curve. Current point ${fmt(x)} ETH and ${fmt(y, 0)} USDT. Post-trade point ${fmt(trade.x1)} ETH.`}>
+          {/* At least 600px wide (13px labels in a 640 viewBox stay ≥ 12px); scrolls sideways on phones. */}
+          <div className="max-w-full overflow-x-auto">
+          <svg className="block h-auto w-full min-w-[600px] rounded-[2px] border border-rule bg-ink" viewBox={`0 0 ${W} ${H}`} role="img" aria-label={`Constant product curve. Current point ${fmt(x)} ETH and ${fmt(y, 0)} USDT. Post-trade point ${fmt(trade.x1)} ETH.`}>
             {xTicks.map((t, i) => (
               <g key={`x${i}`}>
                 <line className="stroke-[rgba(237,234,227,0.06)]" x1={sx(t)} x2={sx(t)} y1={M.t} y2={H - M.b} />
@@ -278,6 +280,7 @@ export function AmmArbSimulator() {
             ) : null}
             <circle cx={sx(x)} cy={sy(y)} r={7} fill="var(--pool)" stroke="var(--ink)" strokeWidth={2} />
           </svg>
+          </div>
           <div className="flex flex-col gap-1 font-sans text-[12.5px] text-bone-2 sm:flex-row sm:flex-wrap sm:gap-x-5">
             <span>
               <span className={SWATCH} style={{ background: "var(--pool)" }} />

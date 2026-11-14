@@ -139,3 +139,64 @@ test("app pages follow the Canyon rules", async ({ page }) => {
     }
   }
 });
+
+type RangeWindow = Window & { __apexChart?: { timeScale(): { getVisibleLogicalRange(): { from: number; to: number } | null } } };
+const visibleWidth = (page: Page) =>
+  page.evaluate(() => {
+    const r = (window as RangeWindow).__apexChart?.timeScale().getVisibleLogicalRange();
+    return r ? r.to - r.from : 0;
+  });
+
+test("price chart keeps the user's pan and zoom", async ({ page }) => {
+  await page.goto("/app");
+  await ready(page);
+  const chart = page.getByRole("region", { name: "Price chart" }).getByRole("img").first();
+  // Wait until the chart holds more than the first few candles (it stops auto-fitting then): 10 ticks a candle.
+  await expect
+    .poll(async () => Number(((await page.getByTestId("sim-tick").textContent()) ?? "").replace(/\D/g, "")), { timeout: 20_000 })
+    .toBeGreaterThan(220);
+  await expect.poll(() => visibleWidth(page)).toBeGreaterThan(8);
+  const fitted = await visibleWidth(page);
+  const box = await chart.boundingBox();
+  if (!box) throw new Error("chart has no box");
+  await page.mouse.move(box.x + box.width * 0.6, box.y + box.height / 2);
+  for (let i = 0; i < 6; i++) {
+    await page.mouse.wheel(0, -400);
+    await page.waitForTimeout(60);
+  }
+  await page.waitForTimeout(300);
+  const zoomed = await visibleWidth(page);
+  expect(zoomed).toBeLessThan(fitted * 0.8);
+  // Frames keep arriving; the zoom must survive them (no snap back to fit-content).
+  await page.waitForTimeout(1200);
+  const later = await visibleWidth(page);
+  expect(Math.abs(later - zoomed)).toBeLessThan(0.5);
+});
+
+test("svg text keeps the 12px floor as drawn", async ({ page }) => {
+  for (const [w, h] of [
+    [390, 844],
+    [1440, 900],
+  ] as const) {
+    await page.setViewportSize({ width: w, height: h });
+    for (const path of PAGES) {
+      await page.goto(path);
+      await ready(page);
+      await setDensity(page, "Pro");
+      await page.waitForTimeout(300);
+      // Rendered size = CSS font-size × the SVG's current scale (viewBox → screen).
+      const small = await page.evaluate(() => {
+        const out: string[] = [];
+        document.querySelectorAll<SVGTextElement>("main svg text").forEach((el) => {
+          const r = el.getBoundingClientRect();
+          const ctm = el.getScreenCTM();
+          if (!ctm || r.width === 0 || r.height === 0 || !el.textContent?.trim()) return;
+          const drawn = parseFloat(getComputedStyle(el).fontSize) * Math.hypot(ctm.a, ctm.b);
+          if (drawn < 11.95) out.push(`${drawn.toFixed(1)}px: ${el.textContent.trim().slice(0, 30)}`);
+        });
+        return [...new Set(out)].slice(0, 10);
+      });
+      expect(small, `${w}px ${path}`).toEqual([]);
+    }
+  }
+});
