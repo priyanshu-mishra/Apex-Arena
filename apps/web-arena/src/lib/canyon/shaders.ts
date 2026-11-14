@@ -3,6 +3,7 @@
  * (docs/design/landing/index.html and gate.html). The market model here mirrors
  * `model.ts` exactly so the status line always matches the picture.
  */
+import { MAX_COPY } from "./copy";
 import { NEV, NL } from "./model";
 
 /* ───────────── shared ───────────── */
@@ -25,7 +26,24 @@ float evap(float u, float sh){ return clamp(sh,0.,1.)*exp(-u*3.2); }
 export const FS_POINT = /* glsl */ `varying vec3 vC; varying float vA; varying float vS;
 void main(){ float r = length(gl_PointCoord-.5)*2.; float a = smoothstep(1., vS, r)*vA; if(a<.004) discard; gl_FragColor = vec4(vC, a); }`;
 
-export const FS_LINE = /* glsl */ `varying vec3 vC; varying float vA; void main(){ gl_FragColor = vec4(vC, vA); }`;
+/**
+ * Copy mask (copy.ts): 1 away from the page copy, uTextDim inside a copy box
+ * (device px, GL origin bottom-left), a smooth ramp across uTextF. Nodes,
+ * wires and lines multiply their alpha by it; the point clouds do not.
+ */
+export const COPY_MASK = /* glsl */ `
+uniform vec4 uTextR[${MAX_COPY}]; uniform float uTextN, uTextF, uTextDim;
+float textMask(){ float m = 1.; vec2 p = gl_FragCoord.xy;
+  for(int i=0;i<${MAX_COPY};i++){ if(float(i)>=uTextN) break; vec4 r = uTextR[i];
+    vec2 d = max(r.xy-p, p-r.zw); m = min(m, mix(uTextDim, 1., smoothstep(0., uTextF, max(d.x, d.y)))); }
+  return m; }
+`;
+
+export const FS_LINE = /* glsl */ `varying vec3 vC; varying float vA; ${COPY_MASK} void main(){ gl_FragColor = vec4(vC, vA*textMask()); }`;
+
+/** FS_POINT for points that draw a line (the price thread's bead chain): dims behind copy like the lines. */
+export const FS_POINT_LINE = /* glsl */ `varying vec3 vC; varying float vA; varying float vS; ${COPY_MASK}
+void main(){ float r = length(gl_PointCoord-.5)*2.; float a = smoothstep(1., vS, r)*vA*textMask(); if(a<.004) discard; gl_FragColor = vec4(vC, a); }`;
 
 /** Depth of field: circle of confusion from distance to the focus plane. */
 export const DOF = /* glsl */ `float d = -mv.z; float coc = clamp(abs(d-uFocus)/uFocus*uAp, 0., 1.);`;
@@ -151,14 +169,14 @@ export const NODE_VS = /* glsl */ `uniform float uPx, uDpr, uExtent; attribute f
     void main(){ vec4 mv = modelViewMatrix*vec4(position,1.); gl_Position = projectionMatrix*mv; vK = aKind; vP = aPulse; vL = aLife*uExtent;
       gl_PointSize = clamp(uPx*(aKind>2.5 ? .4 : .62)*(1.+aPulse*.35)/(-mv.z), 12.*uDpr, 72.*uDpr); }`;
 
-export const NODE_FS = /* glsl */ `uniform vec3 uBone, uPool, uAsk, uBid, uShock; varying float vK, vP, vL;
+export const NODE_FS = /* glsl */ `uniform vec3 uBone, uPool, uAsk, uBid, uShock; varying float vK, vP, vL; ${COPY_MASK}
     void main(){ float r = length(gl_PointCoord-.5)*2.; if(r>1.) discard;
       vec3 c = vK>2.5 ? uBid : vK>1.5 ? uPool : uBone; if(vL<0.) c = uAsk;
       float core = smoothstep(.24,.15,r);
       float ring = vK>.5 && vK<1.5 ? smoothstep(.06,.0,abs(r-.6))*(.5+vP) : 0.;
       float ring2 = smoothstep(.04,.0,abs(r-(.3+vP*.6)))*vP;
       float halo = exp(-r*r*6.)*.22*(1.+vP*1.5);
-      float a = (core+ring+ring2+halo)*abs(vL)*smoothstep(1.,.85,r);
+      float a = (core+ring+ring2+halo)*abs(vL)*smoothstep(1.,.85,r)*textMask();
       gl_FragColor = vec4(c, a); }`;
 
 /* ───────────── gate (docs/design/landing/gate.html): the boot sequence variant ───────────── */
@@ -199,5 +217,5 @@ export const GATE_NODE_VS = /* glsl */ `uniform float uPx, uDpr, uAgents; attrib
       void main(){ vec4 mv = modelViewMatrix*vec4(position,1.); gl_Position = projectionMatrix*mv; vK = aKind; vL = clamp(uAgents*5.-aI, 0., 1.);
         gl_PointSize = clamp(uPx*.62*(1.+(1.-vL)*.6)/(-mv.z), 12.*uDpr, 72.*uDpr); }`;
 
-export const GATE_NODE_FS = /* glsl */ `uniform vec3 uBone; varying float vK, vL; void main(){ float r = length(gl_PointCoord-.5)*2.; if(r>1.) discard;
-        float a = (smoothstep(.24,.15,r) + (vK>.5 ? smoothstep(.06,0.,abs(r-.6))*.5 : 0.) + exp(-r*r*6.)*.22)*vL*smoothstep(1.,.85,r); gl_FragColor = vec4(uBone, a); }`;
+export const GATE_NODE_FS = /* glsl */ `uniform vec3 uBone; varying float vK, vL; ${COPY_MASK} void main(){ float r = length(gl_PointCoord-.5)*2.; if(r>1.) discard;
+        float a = (smoothstep(.24,.15,r) + (vK>.5 ? smoothstep(.06,0.,abs(r-.6))*.5 : 0.) + exp(-r*r*6.)*.22)*vL*smoothstep(1.,.85,r)*textMask(); gl_FragColor = vec4(uBone, a); }`;

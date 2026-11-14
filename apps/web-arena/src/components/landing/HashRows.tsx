@@ -7,6 +7,9 @@ import { cn } from "@/lib/utils";
 
 const c = COPY.c6;
 
+/** A run not yet made: a dotted row the length of a SHA-256 hex hash. */
+export const PENDING_HASH = "·".repeat(64);
+
 /** `4ee5fa37…58725614`: the hash as shown on narrow screens (12px floor). */
 const short = (h: string) => (h.length > 18 ? `${h.slice(0, 8)}…${h.slice(-8)}` : h);
 

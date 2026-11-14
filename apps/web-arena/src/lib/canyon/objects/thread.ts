@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { FS_LINE, FS_POINT, threadVS } from "../shaders";
+import { FS_LINE, FS_POINT_LINE, threadVS } from "../shaders";
 import { COLORS, shaderMat, staged, type Uniforms } from "./util";
 
 /** Price thread (line + bead chain, ×5 run copies) + best bid / best ask along the floor. */
@@ -16,7 +16,7 @@ export function buildThread(U: Uniforms): THREE.Object3D[] {
   const out: THREE.Object3D[] = [];
   for (let c = 0; c < 5; c++) {
     out.push(staged(new THREE.Line(g, shaderMat(U, lineVS, FS_LINE, u(0, c, 0.9, COLORS.bone))), 4));
-    out.push(staged(new THREE.Points(g, shaderMat(U, pointVS, FS_POINT, u(0, c, 0.5, COLORS.bone))), 4));
+    out.push(staged(new THREE.Points(g, shaderMat(U, pointVS, FS_POINT_LINE, u(0, c, 0.5, COLORS.bone))), 4));
   }
   out.push(staged(new THREE.Line(g, shaderMat(U, lineVS, FS_LINE, u(-1, 2, 0.55, COLORS.bid))), 4));
   out.push(staged(new THREE.Line(g, shaderMat(U, lineVS, FS_LINE, u(1, 2, 0.55, COLORS.ask))), 4));

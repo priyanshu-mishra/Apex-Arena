@@ -1,9 +1,11 @@
 "use client";
 
 import Link from "next/link";
+import { useRef } from "react";
 import { GATE, TOP_BAR } from "@/content/landing";
 import { cn } from "@/lib/utils";
 import s from "./landing.module.css";
+import { useBarClip } from "./useBarClip";
 import { useDepth } from "./useDepth";
 
 /** Stepped-canyon glyph: two stepped walls meeting at the floor. */
@@ -39,8 +41,10 @@ function GateTopBar() {
 
 function LandingTopBar() {
   const [depth, setDepth] = useDepth();
+  const ref = useRef<HTMLElement>(null);
+  useBarClip(ref);
   return (
-    <header className={s.top}>
+    <header ref={ref} className={s.top}>
       <a className={s.mark} href="#c0" aria-label={`${TOP_BAR.wordmark}, back to top`}>
         <CanyonGlyph />
         {TOP_BAR.wordmark}

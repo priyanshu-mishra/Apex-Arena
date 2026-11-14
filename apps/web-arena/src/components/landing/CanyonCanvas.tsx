@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { gateCopy, landingCopy } from "@/lib/canyon/copy";
 import type { CanyonScene } from "@/lib/canyon/scene";
 import { prefersReducedMotion } from "@/lib/canyon/motion";
 import { useCanyon } from "@/lib/canyon/store";
@@ -55,6 +56,8 @@ export function CanyonCanvas({ mode = "landing" }: { mode?: "landing" | "gate" }
           return noGl();
         }
         s.resize(window.innerWidth, window.innerHeight);
+        // Nodes, wires and lines dim wherever the page's copy is.
+        s.setCopySource(mode === "gate" ? gateCopy : landingCopy);
         s.start();
         setScene(s);
         useCanyon.getState().setScene(s);

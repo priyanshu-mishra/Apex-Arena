@@ -1,10 +1,12 @@
 import * as THREE from "three";
-import { staged } from "./util";
+import { COPY_MASK } from "../shaders";
+import { staged, type Uniforms } from "./util";
 
 export const EDGE_SEG = 14;
 
-const lineMat = () =>
-  new THREE.LineBasicMaterial({
+/** Additive vertex-coloured lines that dim behind the page copy (the shared uText* uniforms). */
+const lineMat = (U: Uniforms) => {
+  const mat = new THREE.LineBasicMaterial({
     vertexColors: true,
     transparent: true,
     blending: THREE.AdditiveBlending,
@@ -12,9 +14,17 @@ const lineMat = () =>
     depthWrite: false,
     toneMapped: false,
   });
+  mat.onBeforeCompile = (shader) => {
+    for (const k of ["uTextR", "uTextN", "uTextF", "uTextDim"]) shader.uniforms[k] = U[k];
+    shader.fragmentShader = shader.fragmentShader
+      .replace("void main() {", `${COPY_MASK}\nvoid main() {`)
+      .replace("#include <opaque_fragment>", "#include <opaque_fragment>\n\tgl_FragColor.a *= textMask();");
+  };
+  return mat;
+};
 
 /** Graph edges (every agent → the touch and → the pool bead) and score stems. CPU-updated; vertex colour = intensity. */
-export function buildEdges(): { tether: THREE.LineSegments; stems: THREE.LineSegments } {
+export function buildEdges(U: Uniforms): { tether: THREE.LineSegments; stems: THREE.LineSegments } {
   const n = 5 * (EDGE_SEG + EDGE_SEG) * 2;
   const tg = new THREE.BufferGeometry();
   tg.setAttribute("position", new THREE.BufferAttribute(new Float32Array(n * 3), 3));
@@ -22,7 +32,7 @@ export function buildEdges(): { tether: THREE.LineSegments; stems: THREE.LineSeg
   const sg = new THREE.BufferGeometry();
   sg.setAttribute("position", new THREE.BufferAttribute(new Float32Array(4 * 2 * 3), 3));
   sg.setAttribute("color", new THREE.BufferAttribute(new Float32Array(4 * 2 * 3), 3));
-  return { tether: staged(new THREE.LineSegments(tg, lineMat()), 5), stems: staged(new THREE.LineSegments(sg, lineMat()), 5) };
+  return { tether: staged(new THREE.LineSegments(tg, lineMat(U)), 5), stems: staged(new THREE.LineSegments(sg, lineMat(U)), 5) };
 }
 
 /** Writes quadratic Bézier edges into a tether geometry without allocating. */

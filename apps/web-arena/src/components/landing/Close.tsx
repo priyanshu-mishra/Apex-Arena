@@ -9,7 +9,7 @@ const c = COPY.c9;
 /** 09 Close: giant title, XL primary button, one sentence. */
 export function Close() {
   return (
-    <section id={c.id} className={cn(s.flow, s.scrimB, s.close)}>
+    <section id={c.id} className={cn(s.flow, s.scrimB, s.close)} data-bar-clip="">
       <h2 className={s.h2}>
         <TitleLines lines={c.titleLines} />
       </h2>

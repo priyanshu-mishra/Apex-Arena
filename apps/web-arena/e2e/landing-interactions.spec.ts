@@ -135,6 +135,55 @@ test.describe("phone", () => {
     });
     expect(result.small).toEqual([]);
     expect(result.overflow).toBeLessThanOrEqual(0);
+    // The short hash appears once its run lights.
+    await scrollChapterTo(page, "c6", 0.6);
     await expect(page.locator("#c6").getByText("4ee5fa37…58725614").first()).toBeVisible();
   });
+
+  test("the barrier legend sets in two clean rows", async ({ page }) => {
+    await page.goto("/?rm");
+    await scrollChapterTo(page, "c4", 0.6);
+    const rows = await page.evaluate(() => {
+      const spans = Array.from(document.querySelectorAll<HTMLElement>("#c4 [data-shield] > div:last-child > span"));
+      return spans.map((el) => {
+        const r = el.getBoundingClientRect();
+        return { text: el.textContent, top: Math.round(r.top), bottom: Math.round(r.bottom), lines: el.getClientRects().length, h: r.height };
+      });
+    });
+    expect(rows).toHaveLength(3);
+    const [fast, held, each] = rows;
+    // No phrase wraps: each sits on one line.
+    for (const r of rows) expect(r.h, r.text ?? "").toBeLessThan(20);
+    // Counter and "10 ms each" share the first row; the held note has a row of its own below.
+    expect(Math.abs(fast.top - each.top)).toBeLessThanOrEqual(1);
+    expect(held.top).toBeGreaterThanOrEqual(fast.bottom);
+    expect(held.text).toBe("market held · thinking agents answer");
+  });
+});
+
+test("proof rows show placeholders until each run lights", async ({ page }) => {
+  await page.goto("/?rm");
+  const rows = page.locator("#c6").getByTestId("hash-row");
+  await scrollChapterTo(page, "c6", 0.02);
+  await expect(rows).toHaveCount(5);
+  // Not yet run: dotted rows, no hash on show.
+  await expect(page.locator("#c6")).not.toContainText("4ee5fa37");
+  for (let i = 0; i < 5; i++) await expect(rows.nth(i)).toContainText("·".repeat(16));
+  // Part way: the lit runs show the real hash, the rest are still dotted.
+  await scrollChapterTo(page, "c6", 0.27);
+  await expect.poll(() => rows.filter({ hasText: "4ee5fa37" }).count()).toBeGreaterThan(0);
+  const lit = await rows.filter({ hasText: "4ee5fa37" }).count();
+  expect(lit).toBeLessThan(5);
+  for (let i = 0; i < 5; i++) {
+    const row = rows.nth(i);
+    if (i < lit) {
+      await expect(row).toHaveAttribute("data-on", "true");
+      await expect(row).toContainText("4ee5fa377dd4d01d6225c6dd5f4f8f7a2d9cda7db63319e71f3d1c1458725614");
+    } else {
+      await expect(row).not.toHaveAttribute("data-on", /.*/);
+      await expect(row).not.toContainText("4ee5fa37");
+    }
+  }
+  await scrollChapterTo(page, "c6", 0.6);
+  await expect(rows.filter({ hasText: "4ee5fa37" })).toHaveCount(5);
 });

@@ -190,17 +190,22 @@ const c7 = {
   ],
 } as const satisfies ChapterBase<"c7"> & Record<string, unknown>;
 
+/**
+ * The LinkedIn profile URL. The link renders only when this is non-empty;
+ * paste the real profile URL here to show it (nothing else changes).
+ */
+export const LINKEDIN_URL: string = "";
+
 const c8 = {
   id: "c8",
   rail: "08 Credit",
-  title: "Priyanshu Mishra",
-  titleLines: ["Priyanshu Mishra"],
+  /** One statement at display scale (no small label above the name). */
+  title: "Built by Priyanshu Mishra.",
+  titleLines: ["Built by", "Priyanshu Mishra."],
   lede: "Rust, Python and TypeScript, end to end.",
   precise: "",
-  by: "Designed and built by",
   github: { label: "GitHub", href: "https://github.com/priyanshu-mishra" },
-  // TODO(user): replace with the real LinkedIn profile URL.
-  linkedin: { label: "LinkedIn", href: "#linkedin-url-todo", todo: "TODO: LinkedIn URL" },
+  linkedin: { label: "LinkedIn" },
 } as const satisfies ChapterBase<"c8"> & Record<string, unknown>;
 
 const c9 = {

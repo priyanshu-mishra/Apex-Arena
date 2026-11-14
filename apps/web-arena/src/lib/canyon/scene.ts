@@ -10,6 +10,7 @@ import { blendChapter, stagingTable, type ChapterState, type Vec3 } from "./chap
 import { createDprGovernor, stepDprGovernor } from "./dprGovernor";
 import { LEN, NEV, NL, SPAN, W, lambda, lvl, market, midBase, type MarketEvent } from "./model";
 import { REAL } from "./real";
+import { COPY_DIM, COPY_FEATHER, MAX_COPY, copyMaskAt, type CopyBox, type CopySource } from "./copy";
 import { canyonState, drainCanyonInbox, useCanyon, type CanyonStore, type Mood } from "./store";
 import { buildBackground } from "./objects/background";
 import { EdgeWriter, buildEdges } from "./objects/edges";
@@ -147,6 +148,9 @@ export class CanyonScene {
   private readonly unsubscribe: () => void;
   private readonly v3 = new THREE.Vector3();
   private readonly pv = new THREE.Vector3();
+  /* page copy the nodes, wires and lines dim behind (copy.ts) */
+  private copySource: CopySource | null = null;
+  private readonly copyBoxes: CopyBox[] = [];
   private readonly touch = new THREE.Vector3();
 
   constructor(canvas: HTMLCanvasElement, opts: SceneOptions) {
@@ -189,6 +193,8 @@ export class CanyonScene {
       uFace: { value: 1 }, uEv: { value: this.evVec }, uRise: { value: 0 }, uAgents: { value: 0 },
       uBid: { value: COLORS.bid }, uAsk: { value: COLORS.ask }, uPool: { value: COLORS.pool }, uShock: { value: COLORS.shock },
       uBone: { value: COLORS.bone }, uGrey: { value: COLORS.grey },
+      uTextR: { value: Array.from({ length: MAX_COPY }, () => new THREE.Vector4()) },
+      uTextN: { value: 0 }, uTextF: { value: COPY_FEATHER }, uTextDim: { value: COPY_DIM },
     };
     this.OU = {
       uAgentPos: { value: this.agentPos }, uArb: { value: 0 }, uArbSide: { value: 1 }, uOrders: { value: 1 },
@@ -229,7 +235,7 @@ export class CanyonScene {
     const nodes = buildNodes(U, OU);
     add(nodes.points);
     this.nodeGeo = nodes.geo;
-    const e = buildEdges();
+    const e = buildEdges(U);
     add(e.tether);
     add(e.stems);
     this.edges = new EdgeWriter(e.tether.geometry);
@@ -318,6 +324,22 @@ export class CanyonScene {
   /** Pool bead (current reserves) world position this frame. */
   get beadPosition(): Readonly<THREE.Vector3> {
     return this.bead;
+  }
+
+  /** Where the page copy is: read before every frame; nodes, wires and lines dim behind it. */
+  setCopySource(source: CopySource | null): void {
+    this.copySource = source;
+    this.needsRender = true;
+  }
+
+  /** The copy boxes (CSS px) the latest frame dimmed behind. */
+  get textBoxes(): readonly CopyBox[] {
+    return this.copyBoxes;
+  }
+
+  /** How much of a node or wire shows at a CSS-pixel point (1 = all; the shader's mask). */
+  textMaskAt(x: number, y: number): number {
+    return copyMaskAt(this.copyBoxes, x, y);
   }
 
   /** Called after every rendered frame (labels position themselves here). Returns an unsubscribe. */
@@ -608,9 +630,27 @@ export class CanyonScene {
     this.bg.uHor.value += (clamp(this.v3.y, -1.6, 1.6) - this.bg.uHor.value) * (rm ? 1 : 0.2);
     this.bg.uHeat.value = this.heat;
 
+    this.writeTextMask();
     this.renderer.render(this.scene, cam);
     this.updateStatus(st);
     this.afterRender();
+  }
+
+  /** Copy boxes → `uTextR` in drawing-buffer pixels (GL origin bottom-left). */
+  private writeTextMask(): void {
+    const boxes = this.copyBoxes;
+    boxes.length = 0;
+    this.copySource?.(boxes);
+    const k = this.renderer.domElement.width / this.w;
+    const H = this.renderer.domElement.height;
+    const R = this.U.uTextR.value as THREE.Vector4[];
+    const n = Math.min(boxes.length, MAX_COPY);
+    for (let i = 0; i < n; i++) {
+      const b = boxes[i];
+      R[i].set(b.l * k, H - b.b * k, b.r * k, H - b.t * k);
+    }
+    this.U.uTextN.value = n;
+    this.U.uTextF.value = COPY_FEATHER * k;
   }
 
   private writeNodes(): void {
@@ -676,6 +716,7 @@ export class CanyonScene {
     U.uPx.value = this.renderer.domElement.height / (2 * Math.tan((cam.fov * Math.PI) / 360));
     this.v3.set(0, 0, -LEN * 3).project(cam);
     this.bg.uHor.value = clamp(this.v3.y, -1.6, 1.6);
+    this.writeTextMask();
     this.renderer.render(this.scene, cam);
 
     const s = this._status;

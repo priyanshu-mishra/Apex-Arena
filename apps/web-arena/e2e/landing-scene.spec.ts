@@ -118,3 +118,93 @@ test.describe("scene labels on a phone", () => {
     expect((await labelReport(page, chapter)).filter((l) => l.crosses || !l.inside)).toEqual([]);
   });
 });
+
+type Box = { l: number; t: number; r: number; b: number };
+type SceneProbe = { textBoxes: Box[]; setCopySource(s: unknown): void };
+type ProbeWindow = Window & { __canyonState?: () => { scene: SceneProbe | null } };
+
+/**
+ * Renders the same still frame (reduced motion) with the copy mask on and
+ * then off, canvas only, and compares them: `removed` counts pixels inside the
+ * copy boxes that only the unmasked frame lights (lines and nodes behind the
+ * copy), `leaked` counts pixels that changed away from the copy.
+ */
+async function lightBehindCopy(page: Page) {
+  const boxes = await page.evaluate(() => {
+    const scene = (window as ProbeWindow).__canyonState!().scene!;
+    return scene.textBoxes.map((b) => ({ ...b }));
+  });
+  await page.addStyleTag({
+    content: "body * { visibility: hidden !important; } canvas[data-canyon] { visibility: visible !important; }",
+  });
+  await page.waitForTimeout(300);
+  const shot = async () => sharp(await page.screenshot()).raw().toBuffer({ resolveWithObject: true });
+  const masked = await shot();
+  await page.evaluate(() => (window as ProbeWindow).__canyonState!().scene!.setCopySource(null));
+  await page.waitForTimeout(400);
+  const bare = await shot();
+  const { width, height, channels } = masked.info;
+  const k = width / (page.viewportSize()?.width ?? width);
+  const inBox = (x: number, y: number, grow: number) =>
+    boxes.some((b) => x >= (b.l - grow) * k && x < (b.r + grow) * k && y >= (b.t - grow) * k && y < (b.b + grow) * k);
+  let removed = 0;
+  let leaked = 0;
+  for (let y = 0; y < height; y++)
+    for (let x = 0; x < width; x++) {
+      const i = (y * width + x) * channels;
+      const d = bare.data[i] + bare.data[i + 1] + bare.data[i + 2] - (masked.data[i] + masked.data[i + 1] + masked.data[i + 2]);
+      if (Math.abs(d) < 45) continue;
+      if (inBox(x, y, 0)) removed += d > 0 ? 1 : 0;
+      else if (!inBox(x, y, 18)) leaked++;
+    }
+  return { boxes: boxes.length, removed, leaked };
+}
+
+async function scrollTo(page: Page, id: string, p: number) {
+  await page.evaluate(
+    ([sel, prog]) => {
+      const el = document.getElementById(sel as string)!;
+      const top = el.getBoundingClientRect().top + window.scrollY;
+      window.scrollTo(0, Math.round(top + (el.offsetHeight - window.innerHeight) * (prog as number)));
+    },
+    [id, p] as const,
+  );
+}
+
+test.describe("nodes and wires dim behind the copy", () => {
+  for (const [id, p] of [["c4", 0.5], ["c5", 0.5]] as const) {
+    test(`chapter ${id}`, async ({ page }) => {
+      await page.goto("/?rm");
+      await page.waitForSelector('canvas[data-canyon][data-state="running"]', { timeout: 30_000 });
+      await scrollTo(page, id, p);
+      await page.waitForTimeout(1200);
+      const light = await lightBehindCopy(page);
+      expect(light.boxes).toBeGreaterThan(0);
+      // Unmasked, the scene's lines and nodes cross the copy; masked they drop away there, and only there.
+      expect(light.removed, JSON.stringify(light)).toBeGreaterThan(100);
+      expect(light.leaked, JSON.stringify(light)).toBe(0);
+    });
+  }
+
+  test("the hero keeps its approved first viewport", async ({ page }) => {
+    await page.goto("/?rm");
+    await page.waitForSelector('canvas[data-canyon][data-state="running"]', { timeout: 30_000 });
+    await page.waitForTimeout(500);
+    const n = await page.evaluate(() => (window as ProbeWindow).__canyonState!().scene!.textBoxes.length);
+    expect(n).toBe(0);
+  });
+});
+
+test.describe("the gate's stair line on a phone", () => {
+  test.use({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
+
+  test("dims behind the start-up steps", async ({ page }) => {
+    await page.goto("/enter?rm");
+    await page.waitForSelector('canvas[data-canyon="gate"][data-state="running"]', { timeout: 30_000 });
+    await page.waitForTimeout(1200);
+    const light = await lightBehindCopy(page);
+    expect(light.boxes).toBeGreaterThanOrEqual(3);
+    expect(light.removed, JSON.stringify(light)).toBeGreaterThan(100);
+    expect(light.leaked, JSON.stringify(light)).toBe(0);
+  });
+});

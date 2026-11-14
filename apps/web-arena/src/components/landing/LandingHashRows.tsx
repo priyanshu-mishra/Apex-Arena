@@ -4,7 +4,7 @@ import { type ReactNode, useEffect, useState } from "react";
 import { CHAPTER_IDS, COPY } from "@/content/landing";
 import { REAL } from "@/lib/canyon/real";
 import { type CanyonStore, useCanyon } from "@/lib/canyon/store";
-import { HashRows } from "./HashRows";
+import { HashRows, PENDING_HASH } from "./HashRows";
 
 const c = COPY.c6;
 
@@ -18,14 +18,19 @@ const litFor = (st: CanyonStore, n: number) =>
       ? n
       : 0;
 
-/** The landing's 06 Proof rows: the real hash five times, lit by scroll. */
+const RUNS = 5;
+
+/**
+ * The landing's 06 Proof rows, lit by scroll: each run shows a dotted
+ * placeholder until it lights, then the real hash (the app's empty state).
+ */
 export function LandingHashRows({ note }: { note?: ReactNode }) {
-  const hashes = [REAL.hash, REAL.hash, REAL.hash, REAL.hash, REAL.hash];
   const [lit, setLit] = useState(0);
   useEffect(() => {
     // State changes only when the lit count does (six times across the chapter).
-    setLit(litFor(useCanyon.getState(), hashes.length));
-    return useCanyon.subscribe((st) => setLit(litFor(st, hashes.length)));
-  }, [hashes.length]);
+    setLit(litFor(useCanyon.getState(), RUNS));
+    return useCanyon.subscribe((st) => setLit(litFor(st, RUNS)));
+  }, []);
+  const hashes = Array.from({ length: RUNS }, (_, i) => (i < lit ? REAL.hash : PENDING_HASH));
   return <HashRows hashes={hashes} lit={lit} verdictHref={c.verifyHref} note={note} />;
 }

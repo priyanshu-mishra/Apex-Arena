@@ -30,15 +30,24 @@ test("enter the arena goes to the gate", async ({ page }) => {
   await expect(page).toHaveURL(/\/enter$/);
 });
 
-test("credit links", async ({ page }) => {
+test("credit is one statement with plain links", async ({ page }) => {
   await page.goto("/");
   const credit = page.locator("#c8");
+  // One typeset statement at display scale, no small label above the name.
+  await expect(credit.locator("p").first()).toHaveText("Built by Priyanshu Mishra.");
+  await expect(credit).not.toContainText("Designed and built by");
   await expect(credit.getByRole("link", { name: "GitHub" })).toHaveAttribute(
     "href",
     "https://github.com/priyanshu-mishra",
   );
-  const linkedIn = credit.getByRole("link", { name: /LinkedIn/ });
-  await expect(linkedIn).toContainText("TODO: LinkedIn URL");
+  // LINKEDIN_URL (content/landing.ts) is empty: the link stays hidden until it holds the real URL.
+  await expect(credit.getByRole("link", { name: /LinkedIn/ })).toHaveCount(0);
+});
+
+test("no TODO text reaches visitors", async ({ page }) => {
+  await page.goto("/?rm");
+  await expect(page.locator("body")).not.toContainText(/TODO/);
+  expect(await page.locator("[data-todo], a[href*='todo']").count()).toBe(0);
 });
 
 test("status line is a quiet live region", async ({ page }) => {
@@ -122,4 +131,78 @@ test("no text under 12px", async ({ page }) => {
     return out;
   });
   expect(small).toEqual([]);
+});
+
+/**
+ * Sweeps the whole page and, at every step, checks each line of copy that
+ * reaches the top bar's band: the mask on its block must have it at zero
+ * alpha there. Returns the offending lines.
+ */
+async function copyUnderBar(page: import("@playwright/test").Page, step: number) {
+  return page.evaluate(async (stride) => {
+    const frame = () => new Promise((r) => requestAnimationFrame(() => r(null)));
+    const header = document.querySelector("header")!;
+    const band = header.getBoundingClientRect().bottom;
+    const max = document.documentElement.scrollHeight - innerHeight;
+    const bad: string[] = [];
+    const texts: Text[] = [];
+    const walker = document.createTreeWalker(document.querySelector("main")!, NodeFilter.SHOW_TEXT);
+    for (let n = walker.nextNode(); n; n = walker.nextNode()) if (n.textContent?.trim()) texts.push(n as Text);
+    for (let y = 0; y <= max + stride; y += stride) {
+      scrollTo(0, Math.min(y, max));
+      await frame();
+      await frame();
+      for (const t of texts) {
+        const range = document.createRange();
+        range.selectNodeContents(t);
+        for (const r of Array.from(range.getClientRects())) {
+          if (r.width === 0 || r.top >= band || r.bottom <= 0) continue;
+          // Alpha at the lowest point of the line still inside the band (the worst case).
+          const at = Math.min(r.bottom, band);
+          const block = t.parentElement!.closest<HTMLElement>("[data-bar-clip] > *");
+          let alpha = 1;
+          if (block?.hasAttribute("data-bar-clipping")) {
+            const top = block.getBoundingClientRect().top;
+            const a = parseFloat(block.style.getPropertyValue("--bar-a"));
+            const b = parseFloat(block.style.getPropertyValue("--bar-b"));
+            alpha = Math.min(1, Math.max(0, (at - (top + a)) / (b - a)));
+            if (getComputedStyle(block).maskImage === "none") alpha = 1;
+          }
+          if (alpha > 0.02) bad.push(`y=${Math.min(y, max)} alpha=${alpha.toFixed(2)}: ${t.textContent!.trim().slice(0, 30)}`);
+        }
+      }
+    }
+    return [...new Set(bad)].slice(0, 12);
+  }, step);
+}
+
+test("copy never runs under the top bar", async ({ page }) => {
+  test.setTimeout(120_000);
+  await page.goto("/?rm");
+  expect(await copyUnderBar(page, 30)).toEqual([]);
+});
+
+test("the first viewport and settled chapters carry no bar mask", async ({ page }) => {
+  await page.goto("/");
+  await page.waitForTimeout(500);
+  expect(await page.locator("[data-bar-clipping]").count()).toBe(0);
+  // A sticky chapter at rest (stage pinned at the top) keeps its copy whole.
+  for (const id of ["c1", "c2", "c3", "c4", "c5", "c6"]) {
+    await page.evaluate((sel) => {
+      const el = document.getElementById(sel)!;
+      window.scrollTo(0, el.getBoundingClientRect().top + window.scrollY + (el.offsetHeight - window.innerHeight) / 2);
+    }, id);
+    await page.waitForTimeout(150);
+    expect(await page.locator(`#${id} [data-bar-clipping]`).count(), id).toBe(0);
+  }
+});
+
+test.describe("copy and the top bar on a phone", () => {
+  test.use({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
+
+  test("copy never runs under the top bar", async ({ page }) => {
+    test.setTimeout(120_000);
+    await page.goto("/?rm");
+    expect(await copyUnderBar(page, 30)).toEqual([]);
+  });
 });

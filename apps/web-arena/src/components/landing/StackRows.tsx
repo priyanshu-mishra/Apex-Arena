@@ -9,7 +9,7 @@ const c = COPY.c7;
 /** 07 Stack: four typographic rows (word / language / one sentence; Precise adds crates). */
 export function StackRows() {
   return (
-    <section id={c.id} className={cn(s.flow, s.scrimF)}>
+    <section id={c.id} className={cn(s.flow, s.scrimF)} data-bar-clip="">
       <h2 className={cn(s.h2, s.stackTitle)}>
         <TitleLines lines={c.titleLines} />
       </h2>

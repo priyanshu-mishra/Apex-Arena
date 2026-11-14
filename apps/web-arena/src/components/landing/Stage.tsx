@@ -45,7 +45,9 @@ export function Stage({
       className={cn(s.chapter, tall && s.sticky, className)}
       style={style}
     >
-      <div className={cn(s.stage, SCRIM[variant], stageClassName)}>{children}</div>
+      <div className={cn(s.stage, SCRIM[variant], stageClassName)} data-bar-clip="">
+        {children}
+      </div>
     </section>
   );
 }
