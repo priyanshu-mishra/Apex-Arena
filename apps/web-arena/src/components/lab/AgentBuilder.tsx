@@ -3,7 +3,9 @@
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { fmtSigned, fmtUsd, useArena } from "../../lib/arena";
 import type { CustomAgentConfig, LeaderboardEntryUi } from "../../lib/sharedBuffer";
+import { cn } from "../../lib/utils";
 import { Badge, ConceptPill, Panel } from "../ui";
+import { btn, caption, field, fieldLabel, input, label, mono12, num, range, subhead } from "../ui/kit";
 import {
   ARCHETYPES,
   REALIZED_VOL_BPS,
@@ -14,7 +16,6 @@ import {
   type Archetype,
   type BuilderParams,
 } from "./model";
-import styles from "./Lab.module.css";
 
 function nextFreeName(base: string, board: LeaderboardEntryUi[]): string {
   const taken = new Set(board.map((e) => e.agentId.toLowerCase()));
@@ -46,14 +47,14 @@ function Slider({
 }) {
   const id = useId();
   return (
-    <div className="field">
-      <label className="field-label" htmlFor={id}>
+    <div className={field}>
+      <label className={fieldLabel} htmlFor={id}>
         <span>{label}</span>
-        <span className={styles.sliderValue}>{format(value)}</span>
+        <span className={cn(mono12, "text-bone")}>{format(value)}</span>
       </label>
       <input
         id={id}
-        className="range"
+        className={range}
         type="range"
         min={min}
         max={max}
@@ -62,7 +63,7 @@ function Slider({
         aria-valuetext={format(value)}
         onChange={(e) => onChange(Number(e.target.value))}
       />
-      <span className={styles.sliderHint}>{hint}</span>
+      <span className={cn(caption, "text-[12px]")}>{hint}</span>
     </div>
   );
 }
@@ -135,7 +136,7 @@ export function AgentBuilder() {
 
   return (
     <Panel
-      title="Custom agent builder"
+      title="Agent builder"
       subtitle="Design a strategy, preview its quotes against the live book, then deploy it into the arena"
       explain={{
         what: (
@@ -160,23 +161,22 @@ export function AgentBuilder() {
         ),
       }}
     >
-      <div className={styles.builder}>
+      <div className="grid min-w-0 gap-6 2xl:grid-cols-[minmax(0,1fr)_minmax(0,0.9fr)]">
         <form
-          className="stack"
-          style={{ ["--gap" as string]: "20px" }}
+          className="flex min-w-0 flex-col gap-5"
           onSubmit={(e) => {
             e.preventDefault();
             deploy();
           }}
           noValidate
         >
-          <div className="field">
-            <label className="field-label" htmlFor={nameId}>
+          <div className={field}>
+            <label className={fieldLabel} htmlFor={nameId}>
               Agent name
             </label>
             <input
               id={nameId}
-              className="input"
+              className={input}
               value={p.name}
               maxLength={40}
               autoComplete="off"
@@ -189,17 +189,17 @@ export function AgentBuilder() {
               }}
             />
             {showErr && error ? (
-              <span id={errId} className={styles.error} role="alert">
+              <span id={errId} className="font-sans text-[12.5px] text-ask" role="alert">
                 {error}
               </span>
             ) : null}
           </div>
 
-          <div className="field">
-            <span className="field-label" id={`${nameId}-arch`}>
+          <div className={field}>
+            <span className={fieldLabel} id={`${nameId}-arch`}>
               Archetype
             </span>
-            <div className={styles.archetypes} role="radiogroup" aria-labelledby={`${nameId}-arch`}>
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2" role="radiogroup" aria-labelledby={`${nameId}-arch`}>
               {ARCHETYPES.map((a, i) => (
                 <button
                   key={a.id}
@@ -210,18 +210,18 @@ export function AgentBuilder() {
                   role="radio"
                   aria-checked={p.archetype === a.id}
                   tabIndex={p.archetype === a.id ? 0 : -1}
-                  className={styles.archetype}
+                  className="flex flex-col gap-1.5 rounded-[2px] border border-rule-2 p-3 text-left transition-colors hover:border-bone-3 aria-checked:border-bone aria-checked:bg-haze"
                   onClick={() => set("archetype", a.id)}
                   onKeyDown={(e) => onArchKey(e, i)}
                 >
-                  <span className={styles.archetypeTitle}>{a.label}</span>
-                  <span className={styles.archetypeBody}>{a.description}</span>
+                  <span className={subhead}>{a.label}</span>
+                  <span className="font-sans text-[12.5px] leading-[1.45] text-bone-2">{a.description}</span>
                 </button>
               ))}
             </div>
           </div>
 
-          <div className={styles.sliders}>
+          <div className="grid grid-cols-1 gap-x-6 gap-y-4 sm:grid-cols-2">
             <Slider
               label="Risk aversion γ"
               value={p.gamma}
@@ -304,13 +304,13 @@ export function AgentBuilder() {
             />
           </div>
 
-          <div className="row wrap" style={{ ["--gap" as string]: "12px" }}>
-            <button type="submit" className="btn btn-llm btn-lg" disabled={!!error} aria-disabled={!!error}>
+          <div className="flex flex-wrap items-center gap-3">
+            <button type="submit" className={btn("primary", "lg")} disabled={!!error} aria-disabled={!!error}>
               Deploy agent
             </button>
             <button
               type="button"
-              className="btn btn-ghost"
+              className={btn()}
               onClick={() => setP((s) => ({ ...DEFAULTS, name: s.name }))}
             >
               Reset parameters
@@ -318,48 +318,42 @@ export function AgentBuilder() {
           </div>
         </form>
 
-        <div className={styles.preview} aria-label="Strategy preview" role="group">
-          <div className="row-between">
-            <span className="h3" style={{ fontSize: 14 }}>
-              Strategy preview
-            </span>
-            <Badge tone={pv.defensive ? "ask" : "bid"}>{pv.defensive ? "Defense mode" : "Normal quoting"}</Badge>
+        <div className="flex min-w-0 flex-col gap-4 border-t border-rule-2 pt-4 2xl:border-t-0 2xl:border-l 2xl:pt-0 2xl:pl-6" aria-label="Strategy preview" role="group">
+          <div className="flex items-center justify-between gap-2">
+            <span className={subhead}>Strategy preview</span>
+            <Badge tone={pv.defensive ? "ask" : "bid"}>{pv.defensive ? "defense mode" : "normal quoting"}</Badge>
           </div>
 
-          <div className={styles.quoteRow}>
-            <div className={styles.quote}>
-              <span className="label">Bid</span>
-              <span className={styles.quoteValue} style={{ color: "var(--bid)" }}>
-                {fmtUsd(pv.bid)}
-              </span>
-            </div>
-            <div className={styles.quote}>
-              <span className="label">Reservation r</span>
-              <span className={styles.quoteValue}>{fmtUsd(pv.reservation)}</span>
-            </div>
-            <div className={styles.quote}>
-              <span className="label">Ask</span>
-              <span className={styles.quoteValue} style={{ color: "var(--ask)" }}>
-                {fmtUsd(pv.ask)}
-              </span>
-            </div>
+          <div className="grid grid-cols-3 gap-3">
+            {[
+              { k: "Bid", v: pv.bid, c: "var(--bid)" },
+              { k: "Reservation r", v: pv.reservation, c: undefined },
+              { k: "Ask", v: pv.ask, c: "var(--ask)" },
+            ].map((q) => (
+              <div key={q.k} className="flex min-w-0 flex-col gap-1.5">
+                <span className={label}>{q.k}</span>
+                <span className={cn(num, "text-[length:clamp(13px,1.2vw,17px)] text-bone")} style={q.c ? { color: q.c } : undefined}>
+                  {fmtUsd(q.v)}
+                </span>
+              </div>
+            ))}
           </div>
 
-          <div className={styles.ladder} role="img" aria-label={`Bid ${fmtUsd(pv.bid)}, mid ${fmtUsd(pv.mid)}, ask ${fmtUsd(pv.ask)}`}>
-            <span className={styles.ladderMark} style={{ left: `${x(pv.bid)}%`, background: "var(--bid)" }} />
-            <span className={styles.ladderMark} style={{ left: `${x(pv.ask)}%`, background: "var(--ask)" }} />
-            <span className={styles.ladderMark} style={{ left: `${x(pv.mid)}%`, background: "var(--text-4)", width: 1 }} />
-            <span className={styles.ladderMark} style={{ left: `${x(pv.reservation)}%`, background: "var(--llm)" }} />
-            <span className={styles.ladderLabel} style={{ left: `${x(pv.mid)}%`, color: "var(--text-3)" }}>
+          <div className="relative h-[34px] border-b border-rule-2" role="img" aria-label={`Bid ${fmtUsd(pv.bid)}, mid ${fmtUsd(pv.mid)}, ask ${fmtUsd(pv.ask)}`}>
+            <span className="absolute bottom-0 h-[18px] w-[2px]" style={{ left: `${x(pv.bid)}%`, background: "var(--bid)" }} />
+            <span className="absolute bottom-0 h-[18px] w-[2px]" style={{ left: `${x(pv.ask)}%`, background: "var(--ask)" }} />
+            <span className="absolute bottom-0 h-[26px] w-px bg-bone-3" style={{ left: `${x(pv.mid)}%` }} />
+            <span className="absolute bottom-0 h-[12px] w-[2px] bg-bone" style={{ left: `${x(pv.reservation)}%` }} />
+            <span className={cn(mono12, "absolute top-0 -translate-x-1/2 text-bone-3")} style={{ left: `${x(pv.mid)}%` }}>
               mid
             </span>
           </div>
 
-          <div className={styles.formula} aria-label="Reservation price calculation">
+          <div className={cn(mono12, "border-l border-bone pl-3 break-words text-bone")} aria-label="Reservation price calculation">
             r = {pv.mid.toFixed(2)} − ({fmtSigned(pv.q, 0)})·{p.gamma.toFixed(2)}·{pv.sigmaUsd.toFixed(3)}² = {pv.reservation.toFixed(2)}
           </div>
 
-          <ul className={styles.bullets}>
+          <ul className="flex list-none flex-col gap-2 font-sans text-[13.5px] leading-[1.5] text-bone-2 [&>li]:border-b [&>li]:border-rule [&>li]:pb-2">
             <li>
               {arch.label}: {arch.description}
             </li>
@@ -383,7 +377,7 @@ export function AgentBuilder() {
               <ConceptPill concept="margin" label="maintenance margin" /> liquidation.
             </li>
           </ul>
-          <p className="caption">
+          <p className={caption}>
             Scored live with the <ConceptPill concept="acs" label="ACS" align="right" />, including{" "}
             <ConceptPill concept="ood" label="OOD survival" align="right" />.
           </p>

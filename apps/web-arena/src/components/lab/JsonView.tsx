@@ -2,27 +2,25 @@
 
 import { useMemo } from "react";
 import { useArena } from "../../lib/arena";
+import { cn } from "../../lib/utils";
+import { btn, codeBlock } from "../ui/kit";
 import { tokenizeJson, type JsonTokenKind } from "./model";
-import styles from "./Lab.module.css";
 
+/* Quiet syntax colours: bone keys, bone-2 strings, mint numbers, amber literals. */
 const CLASS: Record<JsonTokenKind, string> = {
-  key: styles.tKey,
-  string: styles.tString,
-  number: styles.tNumber,
-  literal: styles.tLiteral,
-  punct: styles.tPunct,
+  key: "text-bone",
+  string: "text-bone-2",
+  number: "text-bid",
+  literal: "text-shock",
+  punct: "text-bone-3",
 };
 
-/** Syntax-highlighted, read-only JSON in a `.code-block`. */
+/** Syntax-highlighted, read-only JSON. */
 export function JsonView({ value, compact, label }: { value: unknown; compact?: boolean; label: string }) {
   const text = useMemo(() => JSON.stringify(value, null, 2), [value]);
   const tokens = useMemo(() => tokenizeJson(text), [text]);
   return (
-    <pre
-      className={`code-block ${styles.json} ${compact ? styles.jsonCompact : ""}`}
-      aria-label={label}
-      tabIndex={0}
-    >
+    <pre className={cn(codeBlock, compact ? "max-h-[220px]" : "max-h-[520px]")} aria-label={label} tabIndex={0}>
       <code>
         {tokens.map((t, i) => (
           <span key={i} className={CLASS[t.kind]}>
@@ -40,13 +38,13 @@ export function CopyButton({ value, what }: { value: unknown; what: string }) {
     const text = typeof value === "string" ? value : JSON.stringify(value, null, 2);
     try {
       await navigator.clipboard.writeText(text);
-      actions.toast({ title: `${what} copied`, body: `${text.length.toLocaleString()} characters on your clipboard.`, tone: "evm" });
+      actions.toast({ title: `${what} copied`, body: `${text.length.toLocaleString("en-US")} characters on your clipboard.`, tone: "evm" });
     } catch {
       actions.toast({ title: "Copy failed", body: "The browser blocked clipboard access.", tone: "ask" });
     }
   };
   return (
-    <button type="button" className="btn btn-sm btn-ghost" onClick={onCopy} aria-label={`Copy ${what} to clipboard`}>
+    <button type="button" className={btn("ghost", "sm")} onClick={onCopy} aria-label={`Copy ${what} to clipboard`}>
       Copy
     </button>
   );

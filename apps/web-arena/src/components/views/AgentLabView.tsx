@@ -2,14 +2,16 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useArena } from "../../lib/arena";
+import { Pro } from "../../lib/density";
 import { ConceptPill } from "../ui";
+import { page } from "../ui/kit";
+import { PageHead } from "./PageHead";
 import { AgentBuilder } from "../lab/AgentBuilder";
 import { BarrierInspector } from "../lab/BarrierInspector";
 import { DigestPanel } from "../lab/DigestPanel";
 import { HeadToHead } from "../lab/HeadToHead";
 import { ReasoningTraces } from "../lab/ReasoningTraces";
 import { buildDigest, epochOf, isLlmAgent, observe, type FrozenDigest, type LoggedTrace } from "../lab/model";
-import styles from "../lab/Lab.module.css";
 
 const TRACE_CAP = 40;
 
@@ -74,29 +76,32 @@ export function AgentLabView() {
   }, [frame, actions]);
 
   return (
-    <div className={styles.page}>
-      <header className={styles.intro}>
-        <div className="stack" style={{ ["--gap" as string]: "8px" }}>
-          <h1 className="h2">Agent lab</h1>
-          <p className="lead">
-            Look inside the reasoning agents. See the one-second <ConceptPill concept="macroDigest" /> they receive, the decision each one
-            makes, and the exact MCP tool call it sends. Then build your own agent and race it against them.
-          </p>
-        </div>
-      </header>
+    <div className={page}>
+      <PageHead
+        title="Agents"
+        lede={
+          <>
+            Look inside the reasoning agents: what they saw, what they concluded and the tool call they sent. Then build your own agent
+            and race it against them. Pro adds the one-second <ConceptPill concept="macroDigest" /> they receive and a head-to-head.
+          </>
+        }
+      />
 
-      <div className={styles.workspace}>
-        <div className={styles.column}>
-          <BarrierInspector digest={digest} />
+      <Pro>
+        <div className="grid min-w-0 grid-cols-1 items-start gap-5 xl:grid-cols-2">
           <DigestPanel digest={digest} onFreeze={freezeNow} />
+          <BarrierInspector digest={digest} />
         </div>
-        <div className={styles.column}>
-          <ReasoningTraces log={log} />
-        </div>
+      </Pro>
+
+      <div className="grid min-w-0 grid-cols-1 items-start gap-5 xl:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
+        <ReasoningTraces log={log} />
+        <AgentBuilder />
       </div>
 
-      <AgentBuilder />
-      <HeadToHead />
+      <Pro>
+        <HeadToHead />
+      </Pro>
     </div>
   );
 }

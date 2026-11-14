@@ -4,9 +4,12 @@ import { useEffect, useId, useMemo, useState } from "react";
 import { agentKind, displayAgentName, fmtSigned, fmtUsd, useArena } from "../../lib/arena";
 import type { LeaderboardEntryUi, PricePointUi } from "../../lib/sharedBuffer";
 import type { ConceptKey } from "../../lib/concepts";
+import { cn } from "../../lib/utils";
 import { Badge, ConceptPill, Panel } from "../ui";
+import { empty, field, fieldLabel, label, mono12, select, table, tableScroll, td, tdNum, th } from "../ui/kit";
 import { equitySeries } from "./model";
-import styles from "./Lab.module.css";
+
+const SWATCH = "mr-2 inline-block h-[2px] w-3 align-middle";
 
 type Better = "high" | "low" | "none";
 interface Row {
@@ -31,11 +34,11 @@ const ROWS: Row[] = [
   { label: "Quoted spread", concept: "spread", better: "none", get: (e) => e.activeSpreadBps, fmt: (v) => `${v} bps` },
 ];
 
-const COLOR_A = "var(--evm)";
-const COLOR_B = "var(--llm)";
+const COLOR_A = "var(--pool)";
+const COLOR_B = "var(--bone)";
 
 function Sparkline({ history, a, b }: { history: PricePointUi[]; a: string; b: string }) {
-  const { pathA, pathB, min, max, empty } = useMemo(() => {
+  const { pathA, pathB, min, max, empty: isEmpty } = useMemo(() => {
     const sa = equitySeries(history, a);
     const sb = equitySeries(history, b);
     const all = [...sa, ...sb];
@@ -75,17 +78,17 @@ function Sparkline({ history, a, b }: { history: PricePointUi[]; a: string; b: s
     return { pathA: toPath(sa), pathB: toPath(sb), min: lo, max: hi, empty: false };
   }, [history, a, b]);
 
-  if (empty) return <div className="empty">Equity history builds up as the arena runs.</div>;
+  if (isEmpty) return <div className={cn(empty, "px-0")}>Equity history builds up as the arena runs.</div>;
   return (
-    <div className="stack" style={{ ["--gap" as string]: "8px" }}>
-      <div className="row-between">
-        <span className="label">Equity over the last {history.length.toLocaleString("en-US")} samples</span>
-        <span className="caption num">
+    <div className="flex flex-col gap-2">
+      <div className="flex flex-wrap items-baseline justify-between gap-2">
+        <span className={label}>Equity over the last {history.length.toLocaleString("en-US")} samples</span>
+        <span className={cn(mono12, "text-bone-3")}>
           {fmtUsd(min, 0)} – {fmtUsd(max, 0)}
         </span>
       </div>
       <svg
-        className={styles.spark}
+        className="block h-[120px] w-full border-y border-rule"
         viewBox="0 0 600 120"
         preserveAspectRatio="none"
         role="img"
@@ -94,13 +97,13 @@ function Sparkline({ history, a, b }: { history: PricePointUi[]; a: string; b: s
         <path d={pathA} fill="none" stroke={COLOR_A} strokeWidth={1.75} vectorEffect="non-scaling-stroke" />
         <path d={pathB} fill="none" stroke={COLOR_B} strokeWidth={1.75} vectorEffect="non-scaling-stroke" />
       </svg>
-      <div className={styles.legend}>
+      <div className="flex flex-wrap gap-x-5 gap-y-1 font-sans text-[12.5px] text-bone-2">
         <span>
-          <span className={styles.legendSwatch} style={{ background: COLOR_A }} />
+          <span className={SWATCH} style={{ background: COLOR_A }} />
           {displayAgentName(a)}
         </span>
         <span>
-          <span className={styles.legendSwatch} style={{ background: COLOR_B }} />
+          <span className={SWATCH} style={{ background: COLOR_B }} />
           {displayAgentName(b)}
         </span>
       </div>
@@ -123,14 +126,14 @@ function AgentSelect({
 }) {
   const id = useId();
   return (
-    <div className="field">
-      <label className="field-label" htmlFor={id}>
+    <div className={field}>
+      <label className={fieldLabel} htmlFor={id}>
         <span>
-          <span className={styles.legendSwatch} style={{ background: color }} />
+          <span className={SWATCH} style={{ background: color }} />
           {label}
         </span>
       </label>
-      <select id={id} className="select" value={value} onChange={(e) => onChange(e.target.value)}>
+      <select id={id} className={select} value={value} onChange={(e) => onChange(e.target.value)}>
         {board.map((e) => (
           <option key={e.agentId} value={e.agentId}>
             {displayAgentName(e.agentId)} ({agentKind(e.badge).label}){e.status === "LIQ" ? " · liquidated" : ""}
@@ -165,7 +168,7 @@ export function HeadToHead() {
       explain={{
         what: (
           <>
-            Side-by-side scorecard for two agents in the live arena. The green cell marks the better value on each row. Fills and quoted
+            Side-by-side scorecard for two agents in the live arena. A mint mark sits beside the better value on each row. Fills and quoted
             spread describe trading style rather than quality, so they have no winner.
           </>
         ),
@@ -179,30 +182,30 @@ export function HeadToHead() {
       }}
     >
       {board.length < 2 ? (
-        <div className="empty">At least two agents are needed. The leaderboard fills in as the arena starts.</div>
+        <div className={cn(empty, "px-0")}>At least two agents are needed. The leaderboard fills in as the arena starts.</div>
       ) : (
-        <div className="stack" style={{ ["--gap" as string]: "20px" }}>
-          <div className={styles.h2hPickers}>
+        <div className="flex flex-col gap-5">
+          <div className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-end gap-3">
             <AgentSelect label="Agent A" value={a} onChange={setA} board={board} color={COLOR_A} />
-            <span className={styles.vs} aria-hidden>
+            <span className="pb-2 font-sans text-[13px] text-bone-3" aria-hidden>
               vs
             </span>
             <AgentSelect label="Agent B" value={b} onChange={setB} board={board} color={COLOR_B} />
           </div>
 
           {ea && eb ? (
-            <div className={styles.tableScroll}>
-              <table className={`table ${styles.h2hTable}`}>
+            <div className={cn(tableScroll, "-mx-4")}>
+              <table className={cn(table, "min-w-[420px]")}>
                 <caption className="sr-only">
                   Metrics for {displayAgentName(a)} and {displayAgentName(b)}; the better value per row is marked.
                 </caption>
                 <thead>
                   <tr>
-                    <th scope="col">Metric</th>
-                    <th scope="col" className="r">
+                    <th scope="col" className={th}>Metric</th>
+                    <th scope="col" className={cn(th, "text-right")}>
                       {displayAgentName(a)} {ea.status === "LIQ" ? <Badge tone="ask">liquidated</Badge> : null}
                     </th>
-                    <th scope="col" className="r">
+                    <th scope="col" className={cn(th, "text-right")}>
                       {displayAgentName(b)} {eb.status === "LIQ" ? <Badge tone="ask">liquidated</Badge> : null}
                     </th>
                   </tr>
@@ -215,18 +218,18 @@ export function HeadToHead() {
                     const bWins = r.better === "high" ? vb > va : r.better === "low" ? vb < va : false;
                     return (
                       <tr key={r.label}>
-                        <th scope="row" className="metric" style={{ position: "static", background: "transparent", fontWeight: 500, color: "var(--text-2)", fontSize: 13 }}>
-                          <span className="row" style={{ ["--gap" as string]: "6px" }}>
+                        <th scope="row" className={cn(td, "font-normal text-left")}>
+                          <span className="inline-flex items-center gap-2">
                             {r.label}
                             {r.concept ? <ConceptPill concept={r.concept} label="?" /> : null}
                           </span>
                         </th>
-                        <td className={`r ${aWins ? styles.win : ""}`}>
-                          {aWins ? <><span className={styles.winDot} aria-hidden /><span className="sr-only">Better: </span></> : null}
+                        <td className={cn(tdNum, !aWins && "text-bone-2")}>
+                          {aWins ? <><span className="mr-2 inline-block size-[7px] rounded-[1px] bg-bid align-middle" aria-hidden /><span className="sr-only">Better: </span></> : null}
                           {r.fmt(va)}
                         </td>
-                        <td className={`r ${bWins ? styles.win : ""}`}>
-                          {bWins ? <><span className={styles.winDot} aria-hidden /><span className="sr-only">Better: </span></> : null}
+                        <td className={cn(tdNum, !bWins && "text-bone-2")}>
+                          {bWins ? <><span className="mr-2 inline-block size-[7px] rounded-[1px] bg-bid align-middle" aria-hidden /><span className="sr-only">Better: </span></> : null}
                           {r.fmt(vb)}
                         </td>
                       </tr>
@@ -237,7 +240,7 @@ export function HeadToHead() {
             </div>
           ) : null}
 
-          <div className={styles.sparkWrap}>
+          <div>
             <Sparkline history={history} a={a} b={b} />
           </div>
         </div>
