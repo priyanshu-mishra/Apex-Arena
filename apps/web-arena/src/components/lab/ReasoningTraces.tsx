@@ -52,7 +52,7 @@ const TraceCard = memo(function TraceCard({ log, pro }: { log: LoggedTrace; pro:
         <Obs label="Inventory skew" value={fmtSigned(obs.inventorySkewBps, 0, " bps")} title={`${obs.inventoryEth.toFixed(2)} ETH`} />
       </div>
 
-      <div className="flex flex-col gap-2 border-l border-bone bg-ink py-1 pl-3">
+      <div className="flex flex-col gap-2 border-l border-bone bg-ink py-1 pr-3 pl-3">
         <p className={cn(mono12, "text-bone text-pretty [font-variation-settings:'wdth'_87.5]")}>{trace.thoughtSummary}</p>
         <p className={cn(mono12, "break-words text-bone-2")}>
           → {rpc.label} · target spread {trace.targetSpreadBps} bps

@@ -21,7 +21,7 @@ export const body = "font-sans text-[14px] leading-[1.55] text-bone-2 text-prett
 export const pageTitle =
   "font-sans text-[length:clamp(28px,3.2vw,44px)] leading-[0.98] font-[560] tracking-[-0.03em] text-bone text-balance [font-variation-settings:'wdth'_122]";
 /** Page lede. */
-export const lede = "max-w-[46em] font-sans text-[length:clamp(15px,1.15vw,17px)] leading-[1.5] text-bone-2 text-pretty";
+export const lede = "max-w-[62ch] font-sans text-[length:clamp(15px,1.15vw,17px)] leading-[1.5] text-bone-2 text-pretty";
 /** Section heading inside a panel. */
 export const subhead = "font-sans text-[13px] leading-none font-semibold text-bone [font-variation-settings:'wdth'_108]";
 /** Big numeral (readouts). */

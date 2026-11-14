@@ -117,6 +117,12 @@
     -moz-osx-font-smoothing: grayscale;
   }
 
+  /* No one-word last lines in body copy. */
+  p,
+  li {
+    text-wrap: pretty;
+  }
+
   ::selection {
     background: color-mix(in srgb, var(--bone) 20%, transparent);
   }
