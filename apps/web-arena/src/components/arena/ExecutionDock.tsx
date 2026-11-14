@@ -277,7 +277,7 @@ function AmmSwap() {
           </div>
         </div>
         {impactBps > 100 ? (
-          <p className="border-l border-ask pl-3 font-sans text-[13px] leading-[1.5] text-bone">This trade moves the pool more than 1%. Consider splitting it.</p>
+          <p className="border-l border-rule-2 pl-3 font-sans text-[13px] leading-[1.5] text-bone">This trade moves the pool more than 1%. Consider splitting it.</p>
         ) : null}
         <button type="submit" className={btn("primary", "lg", "w-full")} disabled={!valid}>
           Swap {valid ? a.toLocaleString("en-US") : ""} {inUnit} for {outUnit}

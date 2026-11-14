@@ -3,7 +3,8 @@
 import { useState, type ReactNode } from "react";
 import { ConceptPill, Panel } from "../ui";
 import { INITIAL_EQUITY_USD, MAINTENANCE_MARGIN_PCT, displayAgentName, useArena } from "../../lib/arena";
-import s from "./arch.module.css";
+import { cn } from "../../lib/utils";
+import { caption, dot, field, fieldLabel, input, label, mono12, num, range, select, table, td, tdNum, th } from "../ui/kit";
 
 const clamp01 = (v: number) => Math.min(1, Math.max(0, v));
 
@@ -29,14 +30,14 @@ function SliderField({
   concept?: "psr" | "calmar" | "ood" | "margin";
 }) {
   return (
-    <div className="field">
-      <span className="field-label">
+    <div className={field}>
+      <span className={fieldLabel}>
         <label htmlFor={id}>{label}</label>
         {concept ? <ConceptPill concept={concept} label="?" align="right" /> : null}
       </span>
-      <div className={s.sliderRow}>
+      <div className="grid grid-cols-[minmax(0,1fr)_96px] items-center gap-3">
         <input
-          className="range"
+          className={range}
           type="range"
           min={min}
           max={max}
@@ -47,7 +48,7 @@ function SliderField({
         />
         <input
           id={id}
-          className="input mono"
+          className={input}
           type="number"
           min={min}
           max={max}
@@ -59,7 +60,7 @@ function SliderField({
           }}
         />
       </div>
-      {hint ? <span className="caption">{hint}</span> : null}
+      {hint ? <span className={cn(caption, "text-[12px]")}>{hint}</span> : null}
     </div>
   );
 }
@@ -99,15 +100,16 @@ export function AcsCalculator() {
     setEquityPct(a.status === "LIQ" ? 4 : Number(((a.equityUsd / INITIAL_EQUITY_USD) * 100).toFixed(2)));
   };
 
+  /* The landing weight bar's shades: bone at full, 70% and 45%; churn in vermilion. */
   const segs = [
-    { key: "psr", label: "0.40 · PSR(0)", v: tPsr, color: "var(--evm)" },
-    { key: "calmar", label: "0.30 · Calmar", v: tCalmar, color: "var(--bid)" },
-    { key: "ood", label: "0.20 · Survival", v: tOod, color: "var(--chaos)" },
+    { key: "psr", label: "0.40 · PSR(0)", v: tPsr, color: "var(--bone)" },
+    { key: "calmar", label: "0.30 · Calmar", v: tCalmar, color: "color-mix(in srgb, var(--bone) 70%, transparent)" },
+    { key: "ood", label: "0.20 · Survival", v: tOod, color: "color-mix(in srgb, var(--bone) 45%, transparent)" },
   ];
 
   return (
     <Panel
-      title="Apex Composite Score calculator"
+      title="Apex score calculator"
       subtitle="The single benchmark number every agent is ranked by."
       explain={{
         what: "ACS blends statistical confidence that the agent has real edge, return per unit of drawdown, and survival in stress regimes it was not tuned for, minus a penalty for churning the book.",
@@ -116,8 +118,7 @@ export function AcsCalculator() {
       }}
       actions={
         <select
-          className="select"
-          style={{ height: 30, fontSize: 13, width: "auto", maxWidth: 210 }}
+          className={cn(select, "h-[30px] w-auto max-w-[210px] text-[13px]")}
           aria-label="Load a live agent"
           value={source}
           onChange={(e) => loadAgent(e.target.value)}
@@ -131,8 +132,8 @@ export function AcsCalculator() {
         </select>
       }
     >
-      <div className={s.twoCol}>
-        <div className="stack" style={{ ["--gap" as string]: "16px" }}>
+      <div className="grid min-w-0 grid-cols-1 gap-8 xl:grid-cols-2">
+        <div className="flex min-w-0 flex-col gap-4">
           <SliderField id="acs-psr" label="PSR(0)" concept="psr" value={psr} min={0} max={1} step={0.01} onChange={setPsr} hint="Probability the true Sharpe ratio is above zero." />
           <SliderField
             id="acs-calmar"
@@ -145,7 +146,7 @@ export function AcsCalculator() {
             onChange={setCalmarRaw}
             hint={
               <>
-                Capped to [0, 1] → <span className="num text-1">{calmar.toFixed(2)}</span>
+                Capped to [0, 1] → <span className={cn(num, "text-bone")}>{calmar.toFixed(2)}</span>
                 {calmarRaw > 1 ? " (excess return beyond 1× drawdown earns nothing extra)" : calmarRaw < 0 ? " (losses floor at 0)" : ""}
               </>
             }
@@ -165,38 +166,42 @@ export function AcsCalculator() {
           />
         </div>
 
-        <div className="stack" style={{ ["--gap" as string]: "18px" }}>
-          <div className="row-between wrap" style={{ alignItems: "flex-end" }}>
-            <div className="stack" style={{ ["--gap" as string]: "2px" }}>
-              <span className="label">Apex Composite Score</span>
-              <span className={s.acsHero} style={{ color: liquidated ? "var(--ask)" : "var(--text)" }} aria-live="polite">
+        <div className="flex min-w-0 flex-col gap-5">
+          <div className="flex flex-wrap items-end justify-between gap-3">
+            <div className="flex flex-col gap-1.5">
+              <span className={label}>Apex Composite Score</span>
+              <span
+                className="font-mono text-[length:clamp(40px,4vw,60px)] leading-none font-medium tracking-[-0.03em] tabular-nums [font-variation-settings:'wdth'_80]"
+                style={{ color: liquidated ? "var(--ask)" : "var(--bone)" }}
+                aria-live="polite"
+              >
                 {acs.toFixed(4)}
               </span>
             </div>
-            <span className="caption">
-              <span className="num">{Math.round(acs * 10_000).toLocaleString("en-US")}</span> bps as reported by the engine
+            <span className={caption}>
+              <span className={num}>{Math.round(acs * 10_000).toLocaleString("en-US")}</span> bps as reported by the engine
             </span>
           </div>
 
-          <div className="stack" style={{ ["--gap" as string]: "6px" }}>
+          <div className="flex flex-col gap-1.5">
             <div
-              className={s.stackBar}
+              className="relative flex h-[5px] w-full gap-[2px] bg-rule"
               role="img"
               aria-label={`Contributions: PSR ${tPsr.toFixed(3)}, Calmar ${tCalmar.toFixed(3)}, survival ${tOod.toFixed(3)}, minus penalty ${tPen.toFixed(3)}.`}
               style={{ opacity: liquidated ? 0.35 : 1 }}
             >
               {segs.map((g) => (
-                <span key={g.key} className={s.stackSeg} style={{ width: `${g.v * 100}%`, background: g.color }} title={`${g.label} = ${g.v.toFixed(4)}`} />
+                <span key={g.key} className="h-full" style={{ width: `${g.v * 100}%`, background: g.color }} title={`${g.label} = ${g.v.toFixed(4)}`} />
               ))}
               {tPen > 0 ? (
                 <span
-                  className={s.penaltySeg}
+                  className="absolute inset-y-0 bg-ask"
                   style={{ left: `${Math.max(0, gross - tPen) * 100}%`, width: `${Math.min(tPen, gross) * 100}%` }}
                   title={`− 0.10 · penalty = ${tPen.toFixed(4)}`}
                 />
               ) : null}
             </div>
-            <div className={s.scale} aria-hidden>
+            <div className={cn(mono12, "flex justify-between text-bone-3")} aria-hidden>
               <span>0</span>
               <span>0.25</span>
               <span>0.50</span>
@@ -205,42 +210,40 @@ export function AcsCalculator() {
             </div>
           </div>
 
-          <table className="table">
+          <table className={table}>
             <thead>
               <tr>
-                <th>Term</th>
-                <th className="r">Input</th>
-                <th className="r">Weight</th>
-                <th className="r">Contribution</th>
+                <th className={th}>Term</th>
+                <th className={cn(th, "text-right")}>Input</th>
+                <th className={cn(th, "text-right")}>Weight</th>
+                <th className={cn(th, "text-right")}>Contribution</th>
               </tr>
             </thead>
             <tbody>
               {[
-                { name: "PSR(0)", color: "var(--evm)", input: psr, w: "0.40", c: tPsr },
-                { name: "Calmar (capped)", color: "var(--bid)", input: calmar, w: "0.30", c: tCalmar },
-                { name: "OOD survival", color: "var(--chaos)", input: ood, w: "0.20", c: tOod },
+                { name: "PSR(0)", color: segs[0].color, input: psr, w: "0.40", c: tPsr },
+                { name: "Calmar (capped)", color: segs[1].color, input: calmar, w: "0.30", c: tCalmar },
+                { name: "OOD survival", color: segs[2].color, input: ood, w: "0.20", c: tOod },
                 { name: "Turnover penalty", color: "var(--ask)", input: penalty, w: "−0.10", c: -tPen },
               ].map((r) => (
                 <tr key={r.name}>
-                  <td>
-                    <span className="dot" style={{ ["--accent" as string]: r.color, marginRight: 8 }} />
+                  <td className={td}>
+                    <span className={cn(dot, "mr-2")} style={{ background: r.color }} />
                     {r.name}
                   </td>
-                  <td className="r num">{r.input.toFixed(2)}</td>
-                  <td className="r num">{r.w}</td>
-                  <td className="r num" style={{ color: r.c < 0 ? "var(--ask)" : "var(--text)" }}>
+                  <td className={tdNum}>{r.input.toFixed(2)}</td>
+                  <td className={tdNum}>{r.w}</td>
+                  <td className={tdNum} style={{ color: r.c < 0 ? "var(--ask)" : undefined }}>
                     {r.c >= 0 ? "+" : "−"}
                     {Math.abs(r.c).toFixed(4)}
                   </td>
                 </tr>
               ))}
               <tr>
-                <td className="text-1" style={{ fontWeight: 600 }}>
-                  ACS
-                </td>
-                <td />
-                <td />
-                <td className="r num text-1" style={{ fontWeight: 700 }}>
+                <td className={cn(td, "font-semibold text-bone")}>ACS</td>
+                <td className={td} />
+                <td className={td} />
+                <td className={cn(tdNum, "font-semibold")}>
                   {acs.toFixed(4)}
                 </td>
               </tr>
@@ -248,20 +251,20 @@ export function AcsCalculator() {
           </table>
 
           {liquidated ? (
-            <div className="callout callout-ask" role="status">
-              <strong className="text-1">Liquidated — ACS forced to 0.</strong> Equity is{" "}
-              <span className="num">{equityPct.toFixed(1)}%</span> of the starting balance, below the {MAINTENANCE_MARGIN_PCT}% maintenance margin. The
+            <div className="border-l border-rule-2 py-1 pl-3 font-sans text-[13.5px] leading-[1.5] text-bone-2" role="status">
+              <strong className="font-semibold text-ask">Liquidated — ACS forced to 0.</strong> Equity is{" "}
+              <span className={num}>{equityPct.toFixed(1)}%</span> of the starting balance, below the {MAINTENANCE_MARGIN_PCT}% maintenance margin. The
               engine force-closes the account, cancels its resting orders and disqualifies it, regardless of how good the other terms look (they would
-              have scored <span className="num">{clamp01(raw).toFixed(4)}</span>).
+              have scored <span className={num}>{clamp01(raw).toFixed(4)}</span>).
             </div>
           ) : raw < 0 ? (
-            <div className="callout callout-chaos" role="status">
+            <div className="border-l border-rule-2 py-1 pl-3 font-sans text-[13.5px] leading-[1.5] text-bone-2" role="status">
               The penalty outweighs every positive term, so ACS is clamped at 0.
             </div>
           ) : (
-            <p className="caption" style={{ fontSize: 13 }}>
-              Account is solvent at <span className="num">{equityPct.toFixed(1)}%</span> of starting equity. Maximum possible ACS is{" "}
-              <span className="num">0.90</span> — a perfect agent with zero turnover.
+            <p className={caption}>
+              Account is solvent at <span className={num}>{equityPct.toFixed(1)}%</span> of starting equity. Maximum possible ACS is{" "}
+              <span className={num}>0.90</span> — a perfect agent with zero turnover.
             </p>
           )}
         </div>

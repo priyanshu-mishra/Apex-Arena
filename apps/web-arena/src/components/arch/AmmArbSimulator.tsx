@@ -3,7 +3,10 @@
 import { useMemo, useState } from "react";
 import { ConceptPill, Panel, Segmented } from "../ui";
 import { useArena } from "../../lib/arena";
-import s from "./arch.module.css";
+import { cn } from "../../lib/utils";
+import { btn, caption, field, fieldLabel, input, label as labelCls, mono12, num as numCls } from "../ui/kit";
+
+const SWATCH = "mr-2 inline-block size-[7px] rounded-[1px] align-middle";
 
 const POOL_FEE = 0.003; // 30 bps, crates/apex-evm AMM_FEE_BPS
 const TAKER_FEE = 0.0004; // 4 bps, crates/apex-clob DEFAULT_TAKER_FEE_BPS
@@ -108,12 +111,12 @@ function ternaryMax(f: (q: number) => number, lo: number, hi: number) {
 
 function Field({ label, value, onChange, step, suffix }: { label: string; value: string; onChange: (v: string) => void; step?: string; suffix?: string }) {
   return (
-    <label className="field">
-      <span className="field-label">
+    <label className={field}>
+      <span className={fieldLabel}>
         {label}
-        {suffix ? <span className="caption">{suffix}</span> : null}
+        {suffix ? <span className={cn(caption, "text-[12px]")}>{suffix}</span> : null}
       </span>
-      <input className="input mono" inputMode="decimal" type="number" min="0" step={step ?? "any"} value={value} onChange={(e) => onChange(e.target.value)} />
+      <input className={input} inputMode="decimal" type="number" min="0" step={step ?? "any"} value={value} onChange={(e) => onChange(e.target.value)} />
     </label>
   );
 }
@@ -177,10 +180,11 @@ export function AmmArbSimulator() {
   const dx = (xMax - xMin) * 0.12;
 
   const tradeColor = dir === "sell" ? "var(--ask)" : "var(--bid)";
+  const ARB = "var(--shock)";
 
   return (
     <Panel
-      title="Constant-product AMM vs. CLOB arbitrage"
+      title="AMM and arbitrage calculator"
       subtitle="The revm pool prices along x·y = k. Size a trade, see its slippage, and find the arbitrage that closes the cross-venue basis."
       explain={{
         what: "The on-chain pool and the order book quote the same asset. When their prices diverge by more than the combined fees, buying on the cheap venue and selling on the rich one is profitable — and that trade pushes the pool back toward the CLOB.",
@@ -188,20 +192,20 @@ export function AmmArbSimulator() {
         math: "With γ = 0.997 and CLOB taker fee f = 4 bps, when the pool is cheap the optimal USDT input is Δ* = (√(γ·P(1−f)·k) − y)/γ, buying q* = x − √(k/(γ·P(1−f))) ETH. When the pool is rich, q* = (√(γ·k/(P(1+f))) − x)/γ. A 200-step ternary search independently checks the closed form.",
       }}
       actions={
-        <button type="button" className="btn btn-sm btn-evm" onClick={loadLive}>
+        <button type="button" className={btn("ghost", "sm")} onClick={loadLive}>
           Load live market
         </button>
       }
     >
-      <div className={s.twoCol}>
-        <div className="stack" style={{ ["--gap" as string]: "14px" }}>
-          <div className="grid-2" style={{ ["--gap" as string]: "12px" }}>
+      <div className="grid min-w-0 grid-cols-1 gap-8 xl:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)]">
+        <div className="flex min-w-0 flex-col gap-3.5">
+          <div className="grid grid-cols-2 gap-3">
             <Field label="ETH reserve x" value={xs} onChange={setXs} />
             <Field label="USDT reserve y" value={ys} onChange={setYs} />
           </div>
           <Field label="CLOB mid price" suffix="USD per ETH" value={ps} onChange={setPs} step="0.01" />
-          <div className="field">
-            <span className="field-label">Trade direction</span>
+          <div className={field}>
+            <span className={fieldLabel}>Trade direction</span>
             <Segmented<Dir>
               ariaLabel="Trade direction"
               value={dir}
@@ -213,45 +217,45 @@ export function AmmArbSimulator() {
             />
           </div>
           <Field label="Trade size" suffix="ETH" value={qs} onChange={setQs} step="0.1" />
-          <div className="row wrap" style={{ gap: 8 }}>
+          <div className="flex flex-wrap gap-1.5">
             {[1, 10, 50, 100].map((v) => (
-              <button key={v} type="button" className="btn btn-sm" onClick={() => setQs(String(v))}>
-                <span className="num">{v}</span> ETH
+              <button key={v} type="button" className={btn("ghost", "sm", numCls)} onClick={() => setQs(String(v))}>
+                {v} ETH
               </button>
             ))}
           </div>
-          <div className="caption">
+          <div className="flex flex-wrap gap-x-4 gap-y-1">
             <ConceptPill concept="invariantK" /> <ConceptPill concept="basis" />
           </div>
         </div>
 
-        <div className="stack" style={{ ["--gap" as string]: "14px" }}>
-          <svg className={s.chart} viewBox={`0 0 ${W} ${H}`} role="img" aria-label={`Constant product curve. Current point ${fmt(x)} ETH and ${fmt(y, 0)} USDT. Post-trade point ${fmt(trade.x1)} ETH.`}>
+        <div className="flex min-w-0 flex-col gap-3.5">
+          <svg className="block h-auto w-full rounded-[2px] border border-rule bg-ink" viewBox={`0 0 ${W} ${H}`} role="img" aria-label={`Constant product curve. Current point ${fmt(x)} ETH and ${fmt(y, 0)} USDT. Post-trade point ${fmt(trade.x1)} ETH.`}>
             {xTicks.map((t, i) => (
               <g key={`x${i}`}>
-                <line className={s.grid} x1={sx(t)} x2={sx(t)} y1={M.t} y2={H - M.b} />
-                <text className={s.axisText} x={sx(t)} y={H - M.b + 18} textAnchor="middle">
+                <line className="stroke-[rgba(237,234,227,0.06)]" x1={sx(t)} x2={sx(t)} y1={M.t} y2={H - M.b} />
+                <text className="fill-bone-3 font-mono text-[13px]" x={sx(t)} y={H - M.b + 18} textAnchor="middle">
                   {compact(t)}
                 </text>
               </g>
             ))}
             {yTicks.map((t, i) => (
               <g key={`y${i}`}>
-                <line className={s.grid} x1={M.l} x2={W - M.r} y1={sy(t)} y2={sy(t)} />
-                <text className={s.axisText} x={M.l - 8} y={sy(t) + 4} textAnchor="end">
+                <line className="stroke-[rgba(237,234,227,0.06)]" x1={M.l} x2={W - M.r} y1={sy(t)} y2={sy(t)} />
+                <text className="fill-bone-3 font-mono text-[13px]" x={M.l - 8} y={sy(t) + 4} textAnchor="end">
                   {compact(t)}
                 </text>
               </g>
             ))}
-            <line className={s.axis} x1={M.l} x2={W - M.r} y1={H - M.b} y2={H - M.b} />
-            <line className={s.axis} x1={M.l} x2={M.l} y1={M.t} y2={H - M.b} />
-            <text className={s.axisText} x={W - M.r} y={H - 6} textAnchor="end">
+            <line className="stroke-rule-2" x1={M.l} x2={W - M.r} y1={H - M.b} y2={H - M.b} />
+            <line className="stroke-rule-2" x1={M.l} x2={M.l} y1={M.t} y2={H - M.b} />
+            <text className="fill-bone-3 font-mono text-[13px]" x={W - M.r} y={H - 6} textAnchor="end">
               ETH reserve x
             </text>
-            <text className={s.axisText} x={M.l + 6} y={M.t + 12}>
+            <text className="fill-bone-3 font-mono text-[13px]" x={M.l + 6} y={M.t + 12}>
               USDT reserve y
             </text>
-            <path className={s.curve} d={curve} />
+            <path className="fill-none stroke-pool" strokeWidth={2} d={curve} />
             {arb.kind !== "none" && inChart(tx, tyv) ? (
               <g>
                 <line
@@ -259,11 +263,11 @@ export function AmmArbSimulator() {
                   y1={sy(tyv + P * dx)}
                   x2={sx(tx + dx)}
                   y2={sy(tyv - P * dx)}
-                  stroke="var(--llm)"
+                  stroke={ARB}
                   strokeDasharray="4 4"
                   strokeWidth={1.5}
                 />
-                <circle cx={sx(tx)} cy={sy(tyv)} r={6} fill="var(--llm)" />
+                <circle cx={sx(tx)} cy={sy(tyv)} r={6} fill={ARB} />
               </g>
             ) : null}
             {trade.valid && inChart(trade.x1, trade.y1) ? (
@@ -272,73 +276,71 @@ export function AmmArbSimulator() {
                 <circle cx={sx(trade.x1)} cy={sy(trade.y1)} r={6} fill={tradeColor} />
               </g>
             ) : null}
-            <circle cx={sx(x)} cy={sy(y)} r={7} fill="var(--evm)" stroke="#05070b" strokeWidth={2} />
+            <circle cx={sx(x)} cy={sy(y)} r={7} fill="var(--pool)" stroke="var(--ink)" strokeWidth={2} />
           </svg>
-          <div className={s.legend}>
+          <div className="flex flex-col gap-1 font-sans text-[12.5px] text-bone-2 sm:flex-row sm:flex-wrap sm:gap-x-5">
             <span>
-              <span className={s.legendSwatch} style={{ background: "var(--evm)" }} />
+              <span className={SWATCH} style={{ background: "var(--pool)" }} />
               Current reserves
             </span>
             <span>
-              <span className={s.legendSwatch} style={{ background: tradeColor }} />
+              <span className={SWATCH} style={{ background: tradeColor }} />
               After your trade (fee stays in the pool, so k grows slightly)
             </span>
             {arb.kind !== "none" ? (
               <span>
-                <span className={s.legendSwatch} style={{ background: "var(--llm)" }} />
+                <span className={SWATCH} style={{ background: ARB }} />
                 Optimal arbitrage point (pool slope = CLOB price)
               </span>
             ) : null}
           </div>
 
-          <div className={s.statGrid}>
+          <div className="grid grid-cols-2 gap-x-4 gap-y-3 sm:grid-cols-3">
             <Stat label="Pool spot y/x" value={`$${fmt(spot)}`} />
             <Stat label={dir === "sell" ? "You receive" : "You pay"} value={trade.valid ? `${fmt(trade.quote)} USDT` : "Exceeds reserve"} />
             <Stat label="Effective price" value={trade.valid ? `$${fmt(eff)}` : "—"} />
             <Stat label="Slippage incl. fee" value={trade.valid ? `${fmt(slippageBps, 1)} bps` : "—"} tone={slippageBps > 50 ? "var(--ask)" : undefined} />
             <Stat label="Price impact" value={trade.valid ? `${impactBps > 0 ? "+" : ""}${fmt(impactBps, 1)} bps` : "—"} />
-            <Stat label="Basis vs. CLOB" value={`${basisBps > 0 ? "+" : ""}${fmt(basisBps, 1)} bps`} tone={Math.abs(basisBps) > 34 ? "var(--chaos)" : undefined} />
+            <Stat label="Basis vs. CLOB" value={`${basisBps > 0 ? "+" : ""}${fmt(basisBps, 1)} bps`} tone={Math.abs(basisBps) > 34 ? "var(--shock)" : undefined} />
           </div>
 
-          <div className={`callout ${arb.kind === "none" ? "" : arb.profit > 0 ? "callout-bid" : ""}`}>
+          <div className="border-t border-rule-2 pt-3 font-sans text-[13.5px] leading-[1.5] text-bone-2">
             {arb.kind === "none" ? (
-              <p style={{ fontSize: 13 }}>
-                No profitable arbitrage. The basis of <span className="num text-1">{fmt(basisBps, 1)} bps</span> sits inside the fee band — a round trip costs 30 bps on the pool plus 4 bps on the CLOB, so any trade would lose money.
+              <p>
+                No profitable arbitrage. The basis of <span className={cn(numCls, "text-bone")}>{fmt(basisBps, 1)} bps</span> sits inside the fee band — a round trip costs 30 bps on the pool plus 4 bps on the CLOB, so any trade would lose money.
               </p>
             ) : (
-              <div className="stack" style={{ ["--gap" as string]: "10px" }}>
-                <p style={{ fontSize: 13 }}>
+              <div className="flex flex-col gap-2.5">
+                <p>
                   {arb.kind === "amm-to-clob" ? (
                     <>
-                      The pool is cheap. Buy <span className="num text-1">{fmt(arb.qty, 4)} ETH</span> on revm for{" "}
-                      <span className="num text-1">{fmt(arb.quoteIn)} USDT</span>, sell it into CLOB bids for{" "}
-                      <span className="num text-1">{fmt(arb.quoteOut)} USDT</span> after the 4 bps taker fee.
+                      The pool is cheap. Buy <span className={cn(numCls, "text-bone")}>{fmt(arb.qty, 4)} ETH</span> on revm for{" "}
+                      <span className={cn(numCls, "text-bone")}>{fmt(arb.quoteIn)} USDT</span>, sell it into CLOB bids for{" "}
+                      <span className={cn(numCls, "text-bone")}>{fmt(arb.quoteOut)} USDT</span> after the 4 bps taker fee.
                     </>
                   ) : (
                     <>
-                      The pool is rich. Buy <span className="num text-1">{fmt(arb.qty, 4)} ETH</span> on the CLOB for{" "}
-                      <span className="num text-1">{fmt(arb.quoteIn)} USDT</span> including the taker fee, sell it into the pool for{" "}
-                      <span className="num text-1">{fmt(arb.quoteOut)} USDT</span>.
+                      The pool is rich. Buy <span className={cn(numCls, "text-bone")}>{fmt(arb.qty, 4)} ETH</span> on the CLOB for{" "}
+                      <span className={cn(numCls, "text-bone")}>{fmt(arb.quoteIn)} USDT</span> including the taker fee, sell it into the pool for{" "}
+                      <span className={cn(numCls, "text-bone")}>{fmt(arb.quoteOut)} USDT</span>.
                     </>
                   )}{" "}
-                  Pool spot moves to <span className="num text-1">${fmt(arb.postSpot)}</span>.
+                  Pool spot moves to <span className={cn(numCls, "text-bone")}>${fmt(arb.postSpot)}</span>.
                 </p>
-                <div className="row-between wrap">
-                  <span className="caption">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <span className={caption}>
                     Profit{" "}
-                    <span className="num" style={{ color: "var(--bid)", fontSize: 18, fontWeight: 700 }}>
-                      {fmt(arb.profit)} USDT
-                    </span>
-                    <span style={{ marginLeft: 12 }}>
-                      Numerical check: <span className="num">{fmt(arb.numericQty, 4)} ETH</span>
+                    <span className={cn(numCls, "text-[18px] font-medium text-bid")}>{fmt(arb.profit)} USDT</span>
+                    <span className="ml-3">
+                      Numerical check: <span className={numCls}>{fmt(arb.numericQty, 4)} ETH</span>
                       {Math.abs(arb.numericQty - arb.qty) < Math.max(1e-3, arb.qty * 1e-4) ? " — agrees" : " — differs"}
                     </span>
                   </span>
-                  <button type="button" className="btn btn-sm btn-llm" onClick={useOptimal}>
+                  <button type="button" className={btn("ghost", "sm")} onClick={useOptimal}>
                     Set trade to optimal size
                   </button>
                 </div>
-                <span className="caption">Ignores CLOB depth: assumes the book absorbs the size at the quoted mid.</span>
+                <span className={caption}>Ignores CLOB depth: assumes the book absorbs the size at the quoted mid.</span>
               </div>
             )}
           </div>
@@ -350,9 +352,9 @@ export function AmmArbSimulator() {
 
 function Stat({ label, value, tone }: { label: string; value: string; tone?: string }) {
   return (
-    <div className={s.stat}>
-      <span className="caption">{label}</span>
-      <span className={s.statValue} style={tone ? { color: tone } : undefined}>
+    <div className="flex min-w-0 flex-col gap-1">
+      <span className={cn(labelCls, "text-[12px]")}>{label}</span>
+      <span className={cn(mono12, "text-[13px] text-bone")} style={tone ? { color: tone } : undefined}>
         {value}
       </span>
     </div>

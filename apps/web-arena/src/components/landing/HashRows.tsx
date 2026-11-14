@@ -1,10 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { type ReactNode, useEffect, useState } from "react";
-import { CHAPTER_IDS, COPY } from "@/content/landing";
-import { REAL } from "@/lib/canyon/real";
-import { type CanyonStore, useCanyon } from "@/lib/canyon/store";
+import type { ReactNode } from "react";
+import { COPY } from "@/content/landing";
 import { cn } from "@/lib/utils";
 
 const c = COPY.c6;
@@ -22,6 +20,10 @@ const BTN =
  * Five-run proof: one row per run ("run n · hash · match"), dim until lit,
  * and the verdict "n / 5 identical" that turns mint when every row is lit.
  * Under 860px the hash is shortened and the "match" column drops.
+ *
+ * `matches` (the app's live check) marks each run against run 1: a run that
+ * differs reads "differs" in vermilion, the verdict counts the matching runs
+ * and turns vermilion when any run differs.
  */
 export function HashRows({
   hashes,
@@ -29,6 +31,7 @@ export function HashRows({
   verdictHref,
   label = c.rowsLabel,
   note,
+  matches,
 }: {
   hashes: string[];
   lit: number;
@@ -37,15 +40,20 @@ export function HashRows({
   label?: string;
   /** Shown between the verdict and the button (the landing's Precise line). */
   note?: ReactNode;
+  /** Per-run agreement with run 1; omitted on the landing, where every run matches. */
+  matches?: boolean[];
 }) {
   const all = hashes.length > 0 && lit >= hashes.length;
+  const failed = all && matches !== undefined && matches.some((m) => !m);
+  const count = matches && all ? matches.filter(Boolean).length : lit;
   return (
     <div className="border-t border-rule-2">
       <div role="img" aria-label={label}>
         {hashes.map((h, i) => {
           const on = i < lit;
+          const differs = matches !== undefined && matches[i] === false;
           return (
-            <div key={i} className={cn(ROW, on ? "opacity-100" : "opacity-[.16]")} data-on={on || undefined}>
+            <div key={i} className={cn(ROW, on ? "opacity-100" : "opacity-[.16]")} data-on={on || undefined} data-testid="hash-row">
               <span className="text-[12px] text-bone-2 [font-variation-settings:'wdth'_87.5]">
                 {c.run} {i + 1}
               </span>
@@ -55,11 +63,12 @@ export function HashRows({
               </span>
               <span
                 className={cn(
-                  "text-right text-[12px] text-bid transition-opacity duration-300 max-[860px]:hidden",
+                  "text-right text-[12px] transition-opacity duration-300 max-[860px]:hidden",
+                  differs ? "text-ask" : "text-bid",
                   on ? "opacity-100" : "opacity-0",
                 )}
               >
-                {c.match}
+                {differs ? "differs" : c.match}
               </span>
             </div>
           );
@@ -70,10 +79,10 @@ export function HashRows({
           data-testid="verdict"
           className={cn(
             "font-mono text-[length:clamp(22px,2.5vw,38px)] leading-none font-medium tracking-[-0.03em] [font-variation-settings:'wdth'_80] transition-colors duration-[400ms]",
-            all ? "text-bid" : "text-bone-3",
+            failed ? "text-ask" : all ? "text-bid" : "text-bone-3",
           )}
         >
-          {lit} {c.verdict.replace("5", String(hashes.length))}
+          {count} {c.verdict.replace("5", String(hashes.length))}
         </span>
         {/* display: contents, so a hidden note (Plain) takes no row of its own when the line wraps */}
         {note ? <div className="contents [&>*]:min-w-[280px] [&>*]:flex-1">{note}</div> : null}
@@ -85,26 +94,4 @@ export function HashRows({
       </div>
     </div>
   );
-}
-
-const PROOF = CHAPTER_IDS.indexOf("c6");
-const clamp01 = (v: number) => (v < 0 ? 0 : v > 1 ? 1 : v);
-/** Guide §4: rows 1–5 light between 6% and 56% of chapter 06 (all lit once past it). */
-const litFor = (st: CanyonStore, n: number) =>
-  st.chapter === PROOF
-    ? Math.floor(clamp01(((st.progress[PROOF] ?? 0) - 0.06) / 0.5) * n + 0.001)
-    : st.chapter > PROOF
-      ? n
-      : 0;
-
-/** The landing's 06 Proof rows: the real hash five times, lit by scroll. */
-export function LandingHashRows({ note }: { note?: ReactNode }) {
-  const hashes = [REAL.hash, REAL.hash, REAL.hash, REAL.hash, REAL.hash];
-  const [lit, setLit] = useState(0);
-  useEffect(() => {
-    // State changes only when the lit count does (six times across the chapter).
-    setLit(litFor(useCanyon.getState(), hashes.length));
-    return useCanyon.subscribe((st) => setLit(litFor(st, hashes.length)));
-  }, [hashes.length]);
-  return <HashRows hashes={hashes} lit={lit} verdictHref={c.verifyHref} note={note} />;
 }

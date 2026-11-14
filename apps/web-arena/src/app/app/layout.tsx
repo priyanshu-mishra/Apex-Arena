@@ -1,6 +1,5 @@
 "use client";
 
-import "@/styles/legacy.css";
 import { ArenaProvider } from "@/lib/arena";
 import { AppShell } from "@/components/app-shell/AppShell";
 

@@ -2,8 +2,9 @@
 
 import type React from "react";
 
+import { cn } from "../../lib/utils";
 import { Panel } from "../ui";
-import s from "./arch.module.css";
+import { mono12 } from "../ui/kit";
 
 /** Observed with `target/debug/apex-tui --verify-determinism --seed 42 --ticks 300`. */
 export const REFERENCE_HASH_SEED42_T300 = "4ee5fa377dd4d01d6225c6dd5f4f8f7a2d9cda7db63319e71f3d1c1458725614";
@@ -13,7 +14,7 @@ const INVARIANTS: { title: React.ReactNode; where: string[] }[] = [
     title: (
       <>
         Bit-for-bit determinism: five runs of seed 42 for 300 ticks all hash to{" "}
-        <span className="num text-1" title={REFERENCE_HASH_SEED42_T300}>
+        <span className={cn(mono12, "text-bone")} title={REFERENCE_HASH_SEED42_T300}>
           {REFERENCE_HASH_SEED42_T300.slice(0, 8)}…{REFERENCE_HASH_SEED42_T300.slice(-4)}
         </span>
         .
@@ -53,16 +54,16 @@ export function InvariantsList() {
         how: "Run ./scripts/verify_determinism_hook.sh from the repo root. It greps the core crates for banned APIs, then runs the 5-run SHA-256 suite.",
       }}
     >
-      <div className={s.invList}>
+      <div className="border-t border-rule-2">
         {INVARIANTS.map((inv, i) => (
-          <div key={i} className={s.invRow}>
-            <span className={s.invCheck} aria-hidden>
-              ✓
+          <div key={i} className="grid grid-cols-1 gap-x-6 gap-y-2 border-b border-rule py-3.5 md:grid-cols-[2.5em_minmax(0,1fr)_minmax(0,22em)]">
+            <span className={cn(mono12, "text-bone-3")} aria-hidden>
+              {String(i + 1).padStart(2, "0")}
             </span>
-            <span style={{ fontSize: 14, color: "var(--text-2)" }}>{inv.title}</span>
-            <span className="stack" style={{ ["--gap" as string]: "2px" }}>
+            <span className="font-sans text-[14px] leading-[1.55] text-bone">{inv.title}</span>
+            <span className="flex flex-col gap-0.5">
               {inv.where.map((w) => (
-                <span key={w} className={s.path}>
+                <span key={w} className={cn(mono12, "break-all text-bone-2")}>
                   {w}
                 </span>
               ))}

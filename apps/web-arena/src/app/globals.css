@@ -99,3 +99,22 @@
     font-variation-settings: "wdth" 87.5;
   }
 }
+
+/* App pages: honour reduced motion (the landing manages its own motion). */
+@media (prefers-reduced-motion: reduce) {
+  main[data-view] *,
+  main[data-view] *::before,
+  main[data-view] *::after {
+    transition-duration: 0.001ms !important;
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}
+
+/* The benchmark's printable report prints black on white. */
+@media print {
+  html,
+  body {
+    background: #fff;
+  }
+}

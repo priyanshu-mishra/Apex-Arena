@@ -4,7 +4,7 @@ import { ChapterRail } from "@/components/landing/ChapterRail";
 import { Close } from "@/components/landing/Close";
 import { Credit } from "@/components/landing/Credit";
 import { Footer } from "@/components/landing/Footer";
-import { LandingHashRows } from "@/components/landing/HashRows";
+import { LandingHashRows } from "@/components/landing/LandingHashRows";
 import { Hero } from "@/components/landing/Hero";
 import { LambdaTrace } from "@/components/landing/LambdaTrace";
 import { LandingMotion } from "@/components/landing/LandingMotion";

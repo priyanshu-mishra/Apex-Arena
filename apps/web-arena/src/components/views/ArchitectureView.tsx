@@ -1,26 +1,30 @@
 "use client";
 
-import { ConceptPill } from "../ui";
-import { useArena } from "../../lib/arena";
+import { Pro } from "../../lib/density";
 import { ArchitectureDiagram } from "../arch/ArchitectureDiagram";
 import { EpochTimeline } from "../arch/EpochTimeline";
 import { AmmArbSimulator } from "../arch/AmmArbSimulator";
 import { AcsCalculator } from "../arch/AcsCalculator";
 import { VerificationConsole } from "../arch/VerificationConsole";
 import { InvariantsList } from "../arch/InvariantsList";
-import s from "../arch/arch.module.css";
+import { btn, page } from "../ui/kit";
+import { PageHead } from "./PageHead";
 
 const SECTIONS = [
-  { id: "arch-system", label: "System" },
   { id: "arch-proof", label: "Verify it yourself" },
+  { id: "arch-system", label: "System" },
   { id: "arch-amm", label: "AMM math" },
   { id: "arch-acs", label: "Scoring" },
   { id: "arch-invariants", label: "Invariants" },
 ];
 
+/**
+ * Proof. Simple: the Rust 5-run check, rendered with the landing's hash
+ * rows. Pro adds the snapshot / MCP / in-browser consoles, the
+ * architecture diagram and clock, the AMM and ACS calculators and the
+ * invariants.
+ */
 export function ArchitectureView() {
-  const { frame, determinism } = useArena();
-
   const jump = (id: string) => {
     const el = document.getElementById(id);
     if (!el) return;
@@ -29,66 +33,44 @@ export function ArchitectureView() {
   };
 
   return (
-    <div className={s.page}>
-      <header className={s.hero}>
-        <div className="stack" style={{ ["--gap" as string]: "12px" }}>
-          <h1 className="h2">Architecture and determinism proof</h1>
-          <p className="lead">
-            A Rust engine that never touches a float, a wall clock or an unordered map — so the same seed always produces the same market, byte for byte.
-            Explore how the pieces fit, then run the proof against the real binary.
-          </p>
-          <nav className="row wrap" style={{ gap: 6 }} aria-label="Sections on this page">
+    <div className={page}>
+      <PageHead
+        title="Proof"
+        lede="The Rust engine never touches a float, a wall clock or an unordered map, so the same seed always produces the same market, byte for byte. Run it five times on this machine and compare the SHA-256 of the full state."
+      >
+        <Pro>
+          <nav className="flex flex-wrap gap-1.5" aria-label="Sections on this page">
             {SECTIONS.map((sec) => (
-              <button key={sec.id} type="button" className="btn btn-sm btn-ghost" onClick={() => jump(sec.id)}>
+              <button key={sec.id} type="button" className={btn("ghost", "sm")} onClick={() => jump(sec.id)}>
                 {sec.label}
               </button>
             ))}
           </nav>
-        </div>
-        <div className={s.heroStats}>
-          <div className={s.heroStat}>
-            <span className="caption">
-              <ConceptPill concept="fixedPoint" label="Fixed-point scale" />
-            </span>
-            <span className={s.heroStatValue}>10⁸ pips</span>
-          </div>
-          <div className={s.heroStat}>
-            <span className="caption">Fast tick · macro epoch</span>
-            <span className={s.heroStatValue}>10 · 1,000 ms</span>
-          </div>
-          <div className={s.heroStat}>
-            <span className="caption">In-browser check</span>
-            <span
-              className={s.heroStatValue}
-              style={{ color: determinism.status === "pass" ? "var(--bid)" : determinism.status === "fail" ? "var(--ask)" : "var(--text-3)" }}
-              title={frame.stateHash}
-            >
-              {determinism.status === "pass" ? "5 / 5 equal" : determinism.status === "fail" ? "Mismatch" : determinism.status === "running" ? "Running…" : "Not run"}
-            </span>
-          </div>
-        </div>
-      </header>
+        </Pro>
+      </PageHead>
 
-      <section id="arch-system" className={s.section} aria-label="System architecture">
-        <ArchitectureDiagram />
-        <EpochTimeline />
-      </section>
-
-      <section id="arch-proof" className={s.section} aria-label="Live verification">
+      <section id="arch-proof" className="flex min-w-0 scroll-mt-20 flex-col gap-5" aria-label="Live verification">
         <VerificationConsole />
       </section>
 
-      <section id="arch-amm" className={s.section} aria-label="AMM and arbitrage math">
-        <AmmArbSimulator />
-      </section>
+      <Pro>
+        <section id="arch-system" className="flex min-w-0 scroll-mt-20 flex-col gap-5" aria-label="System">
+          <ArchitectureDiagram />
+          <EpochTimeline />
+        </section>
 
-      <section id="arch-acs" className={s.section} aria-label="Scoring">
-        <AcsCalculator />
-      </section>
+        <section id="arch-amm" className="min-w-0 scroll-mt-20" aria-label="AMM math">
+          <AmmArbSimulator />
+        </section>
 
-      <section id="arch-invariants" className={s.section} aria-label="Invariants">
-        <InvariantsList />
-      </section>
+        <section id="arch-acs" className="min-w-0 scroll-mt-20" aria-label="Scoring">
+          <AcsCalculator />
+        </section>
+
+        <section id="arch-invariants" className="min-w-0 scroll-mt-20" aria-label="Invariants">
+          <InvariantsList />
+        </section>
+      </Pro>
     </div>
   );
 }
