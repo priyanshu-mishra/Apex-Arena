@@ -173,10 +173,11 @@
   gap: 2px;
 }
 .rail a {
+  position: relative;
   display: flex;
   align-items: center;
-  gap: 10px;
   height: 22px;
+  padding-right: 14px; /* a 24px-wide target around the 10px tick */
   text-decoration: none;
   font: 400 12px/1 var(--mono);
   font-variation-settings: "wdth" 87.5;
@@ -189,7 +190,12 @@
   background: var(--bone-3);
   transition: width 0.3s var(--ease), background 0.3s;
 }
+/* Out of flow, so a hidden label never covers the page's own links. */
 .rail a span {
+  position: absolute;
+  left: calc(100% - 4px); /* 10px after the tick */
+  white-space: nowrap;
+  pointer-events: none;
   opacity: 0;
   transform: translateX(-4px);
   transition: opacity 0.25s, transform 0.25s var(--ease);
@@ -201,11 +207,15 @@
   width: 26px;
   background: var(--bone);
 }
-.rail a[aria-current="location"] span,
+.rail:not([data-flow]) a[aria-current="location"] span,
 .rail:hover a span,
 .rail:focus-within a span {
   opacity: 1;
   transform: none;
+}
+.rail:hover a span,
+.rail:focus-within a span {
+  pointer-events: auto;
 }
 @media (max-width: 1099.98px) {
   .rail {

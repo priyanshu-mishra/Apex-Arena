@@ -68,3 +68,53 @@ test("no WebGL2 shows the poster", async ({ page }) => {
   await expect(page.locator("html")).toHaveClass(/(^|\s)no-gl(\s|$)/);
   await expect(page.getByTestId("canyon-poster")).toBeVisible();
 });
+
+/** Scene labels that are showing, and whether each sits inside the viewport and off the chapter copy. */
+async function labelReport(page: Page, chapter: string) {
+  return page.evaluate((ch) => {
+    const copy = Array.from(document.querySelectorAll<HTMLElement>(`#${ch} :is(h1, h2, p), header, [role='status'], [data-shield]`))
+      .map((el) => el.getBoundingClientRect())
+      .filter((r) => r.width > 0 && r.height > 0);
+    const layer = document.querySelector("div[aria-hidden='true'].fixed.inset-0");
+    return Array.from(layer?.children ?? [])
+      .filter((el) => Number(getComputedStyle(el).opacity) > 0.3)
+      .map((el) => {
+        const r = el.getBoundingClientRect();
+        const crosses = copy.some((c) => r.left < c.right && r.right > c.left && r.top < c.bottom && r.bottom > c.top);
+        return { text: el.textContent, inside: r.left >= 0 && r.right <= innerWidth, crosses };
+      });
+  }, chapter);
+}
+
+test.describe("scene labels", () => {
+  test.use({ viewport: { width: 1280, height: 800 } });
+
+  test("stay off the copy at 1280×800", async ({ page }) => {
+    await page.goto("/");
+    await page.waitForSelector('canvas[data-canyon][data-state="running"]', { timeout: 30_000 });
+    await page.evaluate(() => {
+      const el = document.getElementById("c2")!;
+      window.scrollTo(0, el.getBoundingClientRect().top + window.scrollY + (el.offsetHeight - window.innerHeight) * 0.45);
+    });
+    await page.waitForTimeout(2500);
+    const labels = await labelReport(page, "c2");
+    expect(labels.length).toBeGreaterThan(0);
+    expect(labels.filter((l) => l.crosses || !l.inside)).toEqual([]);
+  });
+});
+
+test.describe("scene labels on a phone", () => {
+  test.use({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
+
+  test("are never cut by the screen edge, before or after rotating", async ({ page }) => {
+    await page.goto("/");
+    await page.waitForSelector('canvas[data-canyon][data-state="running"]', { timeout: 30_000 });
+    await page.waitForTimeout(2500);
+    expect((await labelReport(page, "c0")).filter((l) => l.crosses || !l.inside)).toEqual([]);
+
+    await page.setViewportSize({ width: 844, height: 390 });
+    await page.waitForTimeout(2500);
+    const chapter = await page.evaluate(() => document.querySelector("nav[aria-label='Chapters'] a[aria-current]")!.getAttribute("href")!.slice(1));
+    expect((await labelReport(page, chapter)).filter((l) => l.crosses || !l.inside)).toEqual([]);
+  });
+});

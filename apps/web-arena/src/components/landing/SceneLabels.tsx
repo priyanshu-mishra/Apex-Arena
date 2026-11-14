@@ -122,14 +122,56 @@ const TONE: Record<Tone, string> = {
   pool: "text-pool max-[860px]:hidden",
 };
 
+type Box = { l: number; t: number; r: number; b: number };
+
+const copyEls = new Map<number, HTMLElement[]>();
+
+/** Cached query; re-run when the page swapped any of its elements. */
+function cached(key: number, selector: string): HTMLElement[] {
+  let list = copyEls.get(key);
+  if (!list?.every((el) => el.isConnected)) {
+    list = Array.from(document.querySelectorAll<HTMLElement>(selector));
+    copyEls.set(key, list);
+  }
+  return list;
+}
+
+/**
+ * What a label must not cross: the top bar, the status line, `[data-shield]`
+ * instruments, and the headings and paragraphs of the chapters on screen.
+ */
+function copyBoxes(ch: number, blend: number, out: Box[]): Box[] {
+  out.length = 0;
+  const lists = [cached(-1, "header, [role='status'], [data-shield]")];
+  for (const c of blend < 1 && ch > 0 ? [ch - 1, ch] : [ch]) lists.push(cached(c, `#c${c} :is(h1, h2, p)`));
+  for (const list of lists)
+    for (const el of list) {
+      const r = el.getBoundingClientRect();
+      if (r.width > 0 && r.height > 0 && r.bottom > 0 && r.top < window.innerHeight)
+        out.push({ l: r.left - 6, t: r.top - 4, r: r.right + 6, b: r.bottom + 4 });
+    }
+  return out;
+}
+
+const hits = (boxes: Box[], l: number, t: number, r: number, b: number) =>
+  boxes.some((x) => l < x.r && r > x.l && t < x.b && b > x.t);
+
 /**
  * DOM labels pinned to scene objects (guide §3/§6). Positioned from
  * `scene.project` after every rendered frame; React only re-renders on a
- * Plain / Precise switch.
+ * Plain / Precise switch. A label fades out while it would cross the page's
+ * copy (smaller viewports put agents behind the ledes) or be cut by the
+ * screen edge (phones, and after a rotation).
  */
 export function SceneLabels({ scene }: { scene: CanyonScene }) {
   const precise = useCanyon((s) => s.depth === "precise");
   const els = useRef<(HTMLDivElement | null)[]>([]);
+  /** Label widths, measured once per Plain / Precise text. */
+  const widths = useRef<number[]>([]);
+
+  useEffect(() => {
+    widths.current = [];
+  }, [precise]);
 
   useEffect(() => {
     const rm = scene.reducedMotion;
@@ -140,6 +182,7 @@ export function SceneLabels({ scene }: { scene: CanyonScene }) {
     let aspect = 0;
     let table = stagingTable(window.innerWidth / window.innerHeight);
     const agentsOn = (c: number) => (table[c]?.agents ?? 0) > 0.9;
+    const boxes: Box[] = [];
 
     const hide = (i: number, el: HTMLDivElement) => {
       if (shown[i] !== "0") { el.style.opacity = "0"; shown[i] = "0"; }
@@ -152,16 +195,34 @@ export function SceneLabels({ scene }: { scene: CanyonScene }) {
       const ch = st.chapter;
       const gate = st.blend > 0.55 || ch === 0 ? 1 : 0;
       const extent = scene.extent;
+      // Read layout before this frame's writes, so nothing forces a reflow.
+      copyBoxes(ch, st.blend, boxes);
+      const vw = window.innerWidth;
+      const widthOf = widths.current;
+      if (widthOf.length === 0) for (const el of els.current) widthOf.push(el?.offsetWidth ?? 0);
       for (let i = 0; i < TAGS.length; i++) {
         const el = els.current[i];
         if (!el) continue;
         const t = TAGS[i];
-        const target = t.visible(ch, scene, agentsOn) * gate * extent;
+        let target = t.visible(ch, scene, agentsOn) * gate * extent;
+        if (target > 0) {
+          t.anchor(scene, world);
+          scene.project(world, px);
+          if (!px.visible) target = 0;
+          else {
+            const w = widthOf[i];
+            const l = t.left ? px.x - 8 - w : px.x + 8;
+            // Never half a label at the screen edge, never across the copy.
+            if (l < 4 || l + w > vw - 4 || hits(boxes, l, px.y - 8, l + w, px.y + 8)) target = 0;
+          }
+        }
         fade[i] += (target - fade[i]) * (rm ? 1 : 0.12);
         if (fade[i] < 0.01) { hide(i, el); continue; }
-        t.anchor(scene, world);
-        scene.project(world, px);
-        if (!px.visible) { hide(i, el); continue; }
+        if (target === 0) {
+          t.anchor(scene, world);
+          scene.project(world, px);
+          if (!px.visible) { hide(i, el); continue; }
+        }
         const o = fade[i].toFixed(3);
         if (shown[i] !== o) { el.style.opacity = o; shown[i] = o; }
         el.style.transform = t.left

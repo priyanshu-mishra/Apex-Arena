@@ -70,6 +70,26 @@ test("scrolling drives the scene chapter", async ({ page }) => {
   await expect(page.locator("nav[aria-label='Chapters'] a[aria-current='location']")).toHaveText("07 Stack");
 });
 
+test("the chapter rail never covers the credit links", async ({ page }) => {
+  await page.goto("/?rm");
+  const rail = page.locator("nav[aria-label='Chapters']");
+  // Put the credit links' row level with the rail's active (08) tick.
+  await page.evaluate(() => {
+    const link = Array.from(document.querySelectorAll<HTMLAnchorElement>("#c8 a")).find((a) => a.textContent === "GitHub")!;
+    const tick = document.querySelector("nav[aria-label='Chapters'] a:last-child")!.getBoundingClientRect();
+    const r = link.getBoundingClientRect();
+    window.scrollBy(0, r.top + r.height / 2 - (tick.top + tick.height / 2));
+  });
+  await expect(rail.locator("a[aria-current='location']")).toHaveText("08 Credit");
+  await expect(rail.locator("a[aria-current='location'] span")).toHaveCSS("opacity", "0");
+  const hit = await page.evaluate(() => {
+    const link = Array.from(document.querySelectorAll<HTMLAnchorElement>("#c8 a")).find((a) => a.textContent === "GitHub")!;
+    const r = link.getBoundingClientRect();
+    return document.elementFromPoint(r.left + 2, r.top + r.height / 2)?.closest("a")?.textContent;
+  });
+  expect(hit).toBe("GitHub");
+});
+
 test("reduced motion shows every title without reveals", async ({ page }) => {
   await page.goto("/?rm");
   await expect(page.locator("html")).not.toHaveAttribute("data-motion", /.*/);

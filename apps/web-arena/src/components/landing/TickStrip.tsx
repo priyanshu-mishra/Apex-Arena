@@ -53,7 +53,7 @@ export function TickStrip() {
   }, []);
 
   return (
-    <div ref={rootRef} className={s.tickStrip}>
+    <div ref={rootRef} className={s.tickStrip} data-shield="">
       <div ref={ticksRef} className={s.ticks} aria-hidden="true">
         {Array.from({ length: TICKS }, (_, i) => (
           <i key={i} />
