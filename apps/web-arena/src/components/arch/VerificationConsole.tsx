@@ -336,7 +336,7 @@ export function VerificationConsole() {
         >
           <Tabs<TabId> ariaLabel="Checks" tabs={tabs} value={tab} onChange={setTab} />
 
-          <div className="p-4" role="tabpanel">
+          <div className="py-4" role="tabpanel">
             {tab === "snapshot" ? (
               <div className="flex flex-col gap-4">
                 <div className="flex flex-wrap items-end justify-between gap-3">
@@ -459,7 +459,7 @@ export function VerificationConsole() {
             ) : null}
           </div>
 
-          <div className="flex flex-col gap-2 border-t border-rule p-4">
+          <div className="flex flex-col gap-2 border-t border-rule py-4">
             <div className="flex items-center justify-between">
               <span className={label}>Session log</span>
               {history.length ? (

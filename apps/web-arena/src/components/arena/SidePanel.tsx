@@ -92,7 +92,7 @@ function LeaderRow({
       {expandable ? (
         <button
           type="button"
-          className="flex w-full items-center gap-3 px-4 py-3.5 text-left transition-colors hover:bg-[rgba(237,234,227,0.03)]"
+          className="flex w-full items-center gap-3 py-3.5 text-left transition-colors hover:bg-[rgba(237,234,227,0.03)]"
           aria-expanded={open}
           aria-controls={detailId}
           onClick={onToggle}
@@ -100,10 +100,10 @@ function LeaderRow({
           {inner}
         </button>
       ) : (
-        <div className="flex w-full items-center gap-3 px-4 py-3.5">{inner}</div>
+        <div className="flex w-full items-center gap-3 py-3.5">{inner}</div>
       )}
       {expandable && open ? (
-        <div className="flex flex-col gap-3 px-4 pb-4 pl-12" id={detailId}>
+        <div className="flex flex-col gap-3 pb-4 pl-8" id={detailId}>
           <Meter value={acs} max={1} tone={liq ? "ask" : undefined} label={`ACS ${acs.toFixed(3)}`} />
           <div className="grid grid-cols-2 gap-x-4 gap-y-3">
             <Metric label="PSR(0)" concept="psr">{bpsToUnit(row.psrBps).toFixed(3)}</Metric>
@@ -141,7 +141,7 @@ function Leaderboard({ expandable }: { expandable: boolean }) {
           onToggle={() => setOpen((o) => (o === r.agentId ? null : r.agentId))}
         />
       ))}
-      <div className="flex flex-wrap items-center gap-x-2 gap-y-1 border-t border-rule px-4 py-2.5">
+      <div className="flex flex-wrap items-center gap-x-2 gap-y-1 border-t border-rule py-2.5">
         <span className={caption}>Ranked by the</span>
         <ConceptPill concept="acs" label="Apex Composite Score" />
         {expandable ? <span className={caption}>Expand a row for its parts.</span> : null}
@@ -173,7 +173,7 @@ function humanize(a: string) {
 function EventRow({ ev }: { ev: EvmTraceUi }) {
   const h = humanize(ev.action);
   return (
-    <div className="flex min-w-0 flex-col gap-1.5 border-b border-rule px-4 py-3 last:border-b-0">
+    <div className="flex min-w-0 flex-col gap-1.5 border-b border-rule py-3 last:border-b-0">
       <div className="flex items-center justify-between gap-2">
         <span className="flex min-w-0 items-center gap-2 font-sans text-[13.5px] font-semibold text-bone [font-variation-settings:'wdth'_108]">
           <span className={dot} style={{ background: h.tone }} aria-hidden />
@@ -195,7 +195,7 @@ function RevmStream() {
   const { frame } = useArena();
   return (
     <div>
-      <div className="grid grid-cols-2 gap-4 border-b border-rule p-4">
+      <div className="grid grid-cols-2 gap-4 border-b border-rule py-4">
         <Metric label="ETH reserve (x)">{frame.evmReserveBaseEth.toLocaleString("en-US", { maximumFractionDigits: 2 })}</Metric>
         <Metric label="USDT reserve (y)">{frame.evmReserveQuoteUsdt.toLocaleString("en-US", { maximumFractionDigits: 0 })}</Metric>
         <Metric label="Invariant k" concept="invariantK">{frame.evmInvariantK}</Metric>
@@ -220,7 +220,7 @@ function Reasoning() {
   return (
     <div>
       {frame.newsHeadline ? (
-        <p className="border-b border-rule px-4 py-3 font-sans text-[13.5px] leading-[1.5] text-bone-2">
+        <p className="border-b border-rule py-3 font-sans text-[13.5px] leading-[1.5] text-bone-2">
           <span className="mr-2 inline-flex items-center gap-1.5 font-semibold text-bone">
             <span className={dot} style={{ background: "var(--shock)" }} aria-hidden />
             Macro wire
@@ -228,7 +228,7 @@ function Reasoning() {
           {frame.newsHeadline.replace(/^\[[A-Z]+\]\s*/, "")}
         </p>
       ) : null}
-      <div className="flex flex-wrap items-center gap-x-2 gap-y-1 border-b border-rule px-4 py-2.5">
+      <div className="flex flex-wrap items-center gap-x-2 gap-y-1 border-b border-rule py-2.5">
         <span className={caption}>Agents reason once per</span>
         <ConceptPill concept="macroDigest" label="macro epoch" />
         <span className={caption}>and act through MCP tool calls.</span>
@@ -238,7 +238,7 @@ function Reasoning() {
       ) : (
         <div className="max-h-[560px] overflow-y-auto">
           {frame.reasoningTraces.map((t, i) => (
-            <article key={`${t.agentId}-${t.tick}-${i}`} className="flex min-w-0 flex-col gap-2 border-b border-rule px-4 py-3 last:border-b-0">
+            <article key={`${t.agentId}-${t.tick}-${i}`} className="flex min-w-0 flex-col gap-2 border-b border-rule py-3 last:border-b-0">
               <div className="flex items-center justify-between gap-2">
                 <span className="flex items-center gap-2 font-sans text-[14px] font-semibold text-bone [font-variation-settings:'wdth'_108]">
                   <span className={dot} style={{ background: agentColor(t.agentId) }} aria-hidden />

@@ -203,7 +203,7 @@ export function StageMatrix({ result }: { result: BenchmarkResult }) {
                     ? `color-mix(in srgb, var(--bid) ${Math.round(4 + ((v - 0.35) / 0.65) * 14)}%, transparent)`
                     : `color-mix(in srgb, var(--shock) ${Math.round(6 + (v / 0.35) * 8)}%, transparent)`;
                 return (
-                  <td key={s.key} className={cn(tdNum, "p-1 first:pl-1 last:pr-4")}>
+                  <td key={s.key} className={cn(tdNum, "p-1 first:pl-1 last:pr-0")}>
                     <span
                       className="block px-2 py-1.5 text-right"
                       style={{ background: bg, color: liq ? "var(--ask)" : undefined }}

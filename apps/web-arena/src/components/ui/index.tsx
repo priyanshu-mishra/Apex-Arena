@@ -9,10 +9,13 @@ import { bigNum, btn, caption, dot, label as labelCls, mono12, subhead, toneColo
 export { type Tone } from "./kit";
 
 /* ---------------------------------------------------------------------------
- * Panel — every app surface (guide §5): ink-2 ground, 1px rule border, 2px
- * radius, 13px Archivo title (wght 600, wdth 108), no shadow. It is a
- * labelled region named by its title. Pass `explain` to get a "?" toggle
- * that expands a What / How to use / Under the hood note inside the panel.
+ * Panel — every app surface, in the landing's language (guide §5): a
+ * hairline-ruled strip, never a box. A rule-2 hairline on top, then the label
+ * row (13px Archivo title, wght 600, wdth 108; subtitle; actions; the "?"
+ * toggle), then the content on the page ground. No border around it, no fill,
+ * no radius, no shadow. It is a labelled region named by its title. Pass
+ * `explain` to get a "?" toggle that expands a What / How to use / Under the
+ * hood note under the label row.
  * ------------------------------------------------------------------------- */
 export interface ExplainContent {
   what: React.ReactNode;
@@ -48,12 +51,13 @@ export function Panel({
   const titleId = useId();
   return (
     <section
-      className={cn("flex min-w-0 flex-col rounded-[2px] border border-rule bg-ink-2", className)}
+      className={cn("flex min-w-0 flex-col border-t border-rule-2", className)}
       style={style}
       id={id}
       aria-labelledby={titleId}
+      data-panel=""
     >
-      <header className="flex flex-wrap items-start justify-between gap-x-4 gap-y-2 border-b border-rule px-4 pt-3.5 pb-3">
+      <header className="flex flex-wrap items-start justify-between gap-x-4 gap-y-2 pt-3 pb-3">
         <div className="flex min-w-0 flex-col gap-1.5">
           <h2 id={titleId} className={subhead}>
             {title}
@@ -79,7 +83,7 @@ export function Panel({
       </header>
       {explain && open ? (
         <div
-          className="grid gap-4 border-b border-rule bg-ink px-4 py-4 md:grid-cols-3"
+          className="grid gap-4 border-y border-rule py-4 md:grid-cols-3"
           id={regionId}
           role="region"
           aria-label="Panel explanation"
@@ -89,7 +93,7 @@ export function Panel({
           {explain.math ? <ExplainPart title="Under the hood">{explain.math}</ExplainPart> : null}
         </div>
       ) : null}
-      <div className={cn("min-w-0 flex-1", flush ? "" : "p-4", bodyClassName)}>{children}</div>
+      <div className={cn("min-w-0 flex-1", flush ? "" : "pt-1 pb-4", bodyClassName)}>{children}</div>
     </section>
   );
 }
@@ -298,7 +302,7 @@ export function Tabs<T extends string>({
 }) {
   return (
     <div
-      className="flex max-w-full gap-5 overflow-x-auto border-b border-rule px-4 [scrollbar-width:none]"
+      className="flex max-w-full gap-5 overflow-x-auto border-b border-rule [scrollbar-width:none]"
       role="tablist"
       aria-label={ariaLabel}
     >

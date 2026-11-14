@@ -72,8 +72,8 @@ export const fieldLabel = "flex items-center justify-between gap-2 font-sans tex
 /** Plain table, hairline rows (landing leaderboard language). */
 export const table = "w-full border-collapse font-sans text-[13px] tabular-nums";
 export const th =
-  "border-b border-rule-2 px-3 pb-2.5 pt-3 text-left align-bottom font-sans text-[12px] leading-[1.2] font-normal whitespace-nowrap text-bone-2 first:pl-4 last:pr-4";
-export const td = "border-b border-rule px-3 py-2.5 align-baseline text-bone-2 first:pl-4 last:pr-4";
+  "border-b border-rule-2 px-3 pb-2.5 pt-3 text-left align-bottom font-sans text-[12px] leading-[1.2] font-normal whitespace-nowrap text-bone-2 first:pl-0 last:pr-0";
+export const td = "border-b border-rule px-3 py-2.5 align-baseline text-bone-2 first:pl-0 last:pr-0";
 export const tdNum = cn(td, num, "text-right whitespace-nowrap text-bone");
 export const tableScroll = "max-w-full overflow-x-auto";
 

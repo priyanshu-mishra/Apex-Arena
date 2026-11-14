@@ -200,3 +200,40 @@ test("svg text keeps the 12px floor as drawn", async ({ page }) => {
     }
   }
 });
+
+test("app panels are hairline-ruled strips, not boxes", async ({ page }) => {
+  for (const density of ["Simple", "Pro"] as const) {
+    for (const path of PAGES) {
+      await page.goto(path);
+      await ready(page);
+      await setDensity(page, density);
+      await page.waitForTimeout(300);
+      const report = await page.evaluate(() =>
+        Array.from(document.querySelectorAll<HTMLElement>("main [data-panel]")).map((el) => {
+          const cs = getComputedStyle(el);
+          const head = el.querySelector(":scope > header");
+          return {
+            name: el.querySelector("h2")?.textContent ?? "?",
+            top: cs.borderTopWidth,
+            sides: [cs.borderRightWidth, cs.borderBottomWidth, cs.borderLeftWidth],
+            fill: cs.backgroundColor,
+            radius: cs.borderTopLeftRadius,
+            // The "?" explain toggle, when present, sits in the label row.
+            explainInLabel: el.querySelector("button[aria-label^='Explain'], button[aria-label^='Hide explanation']")
+              ? !!head?.querySelector("button[aria-label^='Explain'], button[aria-label^='Hide explanation']")
+              : true,
+          };
+        }),
+      );
+      expect(report.length, `${density} ${path}`).toBeGreaterThan(0);
+      for (const p of report) {
+        const where = `${density} ${path} ${p.name}`;
+        expect(p.top, where).toBe("1px");
+        expect(p.sides, where).toEqual(["0px", "0px", "0px"]);
+        expect(p.fill, where).toBe("rgba(0, 0, 0, 0)");
+        expect(p.radius, where).toBe("0px");
+        expect(p.explainInLabel, where).toBe(true);
+      }
+    }
+  }
+});

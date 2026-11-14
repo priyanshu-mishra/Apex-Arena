@@ -9,7 +9,7 @@ import { Badge, ConceptPill, Kbd, Panel, Segmented, Tabs } from "../ui";
 import { btn, caption, dot, empty, field, fieldLabel, input, num, table, tableScroll, td, tdNum, th, toneColor } from "../ui/kit";
 
 /* Shared layout pieces for the dock's forms. */
-const FORM_GRID = "grid min-w-0 gap-6 p-4 lg:grid-cols-2";
+const FORM_GRID = "grid min-w-0 gap-6 py-4 lg:grid-cols-2";
 const FORM_COL = "flex min-w-0 flex-col gap-4";
 const HELP = "font-sans text-[13px] leading-[1.5] text-bone-3 text-pretty";
 const CHIPS = "flex flex-wrap gap-1.5";
@@ -294,7 +294,7 @@ function AmmSwap() {
 function StressLab() {
   const { actions, paused, speed, frame } = useArena();
   return (
-    <div className="flex min-w-0 flex-col gap-5 p-4">
+    <div className="flex min-w-0 flex-col gap-5 py-4">
       <div className="flex flex-wrap items-center gap-2" role="group" aria-label="Simulation playback">
         <button type="button" className={btn("ghost", "md", "w-[92px]")} onClick={actions.togglePause}>
           {paused ? "Resume" : "Pause"}

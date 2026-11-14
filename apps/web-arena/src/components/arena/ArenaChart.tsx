@@ -471,7 +471,7 @@ export function ArenaChart() {
       }}
     >
       {pro ? (
-        <div className="flex flex-wrap items-center gap-2 border-b border-rule px-4 py-2.5">
+        <div className="flex flex-wrap items-center gap-2 border-b border-rule py-2.5">
           <Segmented ariaLabel="Chart mode" value={modeChoice} onChange={setMode} options={MODES.map((m) => ({ value: m.value, label: m.label }))} />
           {mode === "price" ? (
             <button type="button" className={btn("ghost", "sm")} aria-pressed={basisChoice} onClick={() => setShowBasis((v) => !v)}>
@@ -488,7 +488,7 @@ export function ArenaChart() {
           </div>
         ) : null}
       </div>
-      <div className={cn(mono12, "flex flex-wrap items-center gap-x-5 gap-y-1.5 border-t border-rule px-4 py-2.5 text-bone-2")}>
+      <div className={cn(mono12, "flex flex-wrap items-center gap-x-5 gap-y-1.5 border-t border-rule py-2.5 text-bone-2")}>
         {legend.map((l) => (
           <span key={l.key} className={cn("inline-flex items-center gap-2", l.you && "text-bone")}>
             <span className="inline-block h-[2px] w-3" style={{ background: l.color }} aria-hidden />

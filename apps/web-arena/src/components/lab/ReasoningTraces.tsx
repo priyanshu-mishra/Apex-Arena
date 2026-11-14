@@ -32,7 +32,7 @@ const TraceCard = memo(function TraceCard({ log, pro }: { log: LoggedTrace; pro:
   const rpc = useMemo(() => toJsonRpc(log), [log]);
   return (
     <article
-      className="flex min-w-0 flex-col gap-3 border-b border-rule px-4 py-4 last:border-b-0"
+      className="flex min-w-0 flex-col gap-3 border-b border-rule py-4 last:border-b-0"
       aria-label={`${trace.agentId} at tick ${trace.tick}`}
     >
       <header className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
@@ -125,7 +125,7 @@ export function ReasoningTraces({ log }: { log: LoggedTrace[] }) {
       }}
     >
       <Pro>
-        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 border-b border-rule px-4 py-2.5">
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 border-b border-rule py-2.5">
           <span className={caption}>Read the signals:</span>
           <ConceptPill concept="hawkes" label="λ(t)" />
           <ConceptPill concept="imbalance" label="Imbalance" />

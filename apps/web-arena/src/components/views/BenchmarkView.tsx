@@ -272,7 +272,7 @@ export function BenchmarkView() {
               }}
               flush
             >
-              <div className="border-b border-rule px-4 py-3">
+              <div className="border-b border-rule py-3">
                 <GradeLegend />
               </div>
               <Scorecard result={result} />

@@ -10,7 +10,7 @@ import { bigNum, caption, empty, label, num } from "../ui/kit";
 
 type DepthMode = "level" | "cumulative";
 
-const GRID = "grid grid-cols-[1.25fr_1fr_1fr_0.6fr] items-center gap-x-2 px-4";
+const GRID = "grid grid-cols-[1.25fr_1fr_1fr_0.6fr] items-center gap-x-2";
 
 function Row({
   level,
@@ -120,7 +120,7 @@ export function OrderBook() {
         )}
       </div>
 
-      <div className="grid grid-cols-3 gap-x-3 border-y border-rule-2 px-4 py-2.5">
+      <div className="grid grid-cols-3 gap-x-3 border-y border-rule-2 py-2.5">
         <div className="flex flex-col gap-1">
           <span className={label}>Mid</span>
           <span className={cn(bigNum, "text-[length:clamp(14px,1.1vw,16px)] tracking-[-0.02em]")}>{frame.clobMidFormatted}</span>
@@ -151,7 +151,7 @@ export function OrderBook() {
       </div>
 
       <Pro>
-        <div className="flex flex-col gap-2.5 border-t border-rule px-4 py-3">
+        <div className="flex flex-col gap-2.5 border-t border-rule py-3">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <span className={caption}>
               Visible depth <span className={cn(num, "text-bid")}>{bidDepth.toFixed(1)}</span> bid vs{" "}
