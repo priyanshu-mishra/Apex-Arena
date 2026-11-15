@@ -39,7 +39,7 @@ jobs:
         run: bun run typecheck
       - uses: actions/upload-pages-artifact@v3
         with:
-          path: apps/web-arena/out
+          path: apps/web-arena/.next-pages
 
   deploy:
     needs: build

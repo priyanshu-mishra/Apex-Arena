@@ -210,9 +210,8 @@ Python MCP bridge require the local Next.js server; they are not available on Pa
 Pages uses the existing ArrayBuffer fallback because it cannot set the isolation
 headers needed for SharedArrayBuffer.
 
-In GitHub **Settings → Pages**, choose **GitHub Actions** as the source. Commit and
-push the Pages configuration to the default branch; `.github/workflows/pages.yml`
-builds and deploys the demo. Private repositories require a GitHub plan supporting
+Pages is set to **GitHub Actions** as the source; every push to `main` that touches
+`apps/web-arena` runs `.github/workflows/pages.yml`, which builds and deploys the demo. Private repositories require a GitHub plan supporting
 Pages for private repositories. A Pages site may be public even if its source is private.
 
 To build the same static demo locally from `apps/web-arena`:
@@ -221,7 +220,7 @@ To build the same static demo locally from `apps/web-arena`:
 NEXT_PUBLIC_BASE_PATH=/Apex-Arena bun run build:pages
 ```
 
-The static site is written to `apps/web-arena/out`. Serve it beneath
+The static site is written to `apps/web-arena/.next-pages` (the workflow uploads this folder). Serve it beneath
 `/Apex-Arena/` to match the configured asset paths. Omit `NEXT_PUBLIC_BASE_PATH`
 when building for a root domain. Normal `bun run dev` and `bun run build` retain
 the native API bridge.
