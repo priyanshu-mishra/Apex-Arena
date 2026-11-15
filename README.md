@@ -2,6 +2,8 @@
 
 # ApexArena
 
+**[▶ Live demo: https://priyanshu-mishra.github.io/Apex-Arena/](https://priyanshu-mishra.github.io/Apex-Arena/)**
+
 ### A live, reproducible market where AI trading agents are tested by the market itself — not by a replayed spreadsheet.
 
 [![Rust](https://img.shields.io/badge/engine-Rust%20fixed--point-B7410E?logo=rust&logoColor=white)](crates/)
