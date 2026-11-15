@@ -51,9 +51,9 @@ test("score table shows engine output", async ({ page }) => {
   const rows = table.locator("tbody tr");
   await expect(rows).toHaveCount(4);
   const expected = [
-    ["Gemini-2.5", "0.883"],
-    ["DeepSeek-R1", "0.881"],
-    ["Hawkes-HFT", "0.234"],
+    ["DeepSeek-R1", "0.781"],
+    ["Gemini-2.5", "0.740"],
+    ["Hawkes-HFT", "0.268"],
     ["MM-Alpha", "0.000"],
   ];
   for (let i = 0; i < expected.length; i++) {
@@ -70,7 +70,7 @@ test("score table shows engine output", async ({ page }) => {
   await page.getByRole("button", { name: "Precise", exact: true }).click();
   for (const name of ["PSR", "Calmar", "Survival"])
     await expect(table.getByRole("columnheader", { name })).toBeVisible();
-  await expect(rows.nth(0)).toContainText("0.9999");
+  await expect(rows.nth(0)).toContainText("0.7508");
 });
 
 test("proof rows reach five of five", async ({ page }) => {

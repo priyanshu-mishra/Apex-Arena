@@ -2,7 +2,13 @@
 export type RealData = {
   seed: 42;
   ticks: 300;
-  scenario: "flash-crash";
+  /** The run behind `mid`, `asks` and `leaderboard`: `apex-tui --scenario flash-crash --json`. */
+  leaderboardScenario: "flash-crash";
+  /**
+   * The run behind `hash` / `hashes`: `apex-tui --verify-determinism`, a separate run that starts
+   * calm and injects a flash crash halfway. It is not the leaderboard run, so its hash differs.
+   */
+  proof: { startRegime: string; flashCrashAtTick: number };
   hash: string;
   /** The five verify runs' SHA-256 state hashes, in run order. */
   hashes: string[];
@@ -90,7 +96,11 @@ export function parseTui(snapshot: unknown, verify: unknown, calm?: unknown): Re
   return {
     seed: 42,
     ticks: 300,
-    scenario: "flash-crash",
+    leaderboardScenario: "flash-crash",
+    proof: {
+      startRegime: typeof verify.start_regime === "string" ? verify.start_regime : "calm",
+      flashCrashAtTick: typeof verify.flash_crash_at_tick === "number" ? verify.flash_crash_at_tick : 150,
+    },
     hash: hashes[0],
     hashes,
     hashesEqual: verify.all_equal,

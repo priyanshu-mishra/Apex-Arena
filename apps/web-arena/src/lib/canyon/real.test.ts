@@ -8,6 +8,7 @@ import { ORDER_MAX_ETH } from "./ladder";
 import { PROOF_RUNS, proofRefusal } from "./parse";
 import { REAL, parseTui, realAcs, runMatches } from "./real";
 import { BASE_MID, INITIAL_STATUS } from "./status";
+import { COPY } from "../../content/landing";
 
 describe("parseTui", () => {
   it("reads the ledger values", () => {
@@ -19,10 +20,14 @@ describe("parseTui", () => {
     expect(r.asks).toHaveLength(7);
     expect(r.asks[0][0]).toBeCloseTo(2142.69, 2);
     expect(r.asks[0][1]).toBeCloseTo(1.858, 3);
-    expect(r.leaderboard.map((a) => a.agentId)).toEqual(["Gemini-2.5", "DeepSeek-R1", "Hawkes-HFT", "MM-Alpha"]);
-    expect(r.leaderboard.map((a) => Number(a.acs.toFixed(3)))).toEqual([0.883, 0.881, 0.234, 0]);
+    expect(r.leaderboard.map((a) => a.agentId)).toEqual(["DeepSeek-R1", "Gemini-2.5", "Hawkes-HFT", "MM-Alpha"]);
+    expect(r.leaderboard.map((a) => Number(a.acs.toFixed(3)))).toEqual([0.781, 0.74, 0.268, 0]);
+    // PSR(0) is a graded probability, not a 0/1 switch.
+    expect(r.leaderboard.map((a) => a.psr)).toEqual([0.7508, 0.6424, 0.0853, 0.3398]);
+    expect(r.proof).toEqual({ startRegime: "calm", flashCrashAtTick: 150 });
     expect(r.leaderboard[3].liquidated).toBe(true);
     expect(r.leaderboard[0].role).toBe("reasoning agent");
+    expect(r.leaderboard[1].role).toBe("reasoning agent");
     expect(r.leaderboard[2].role).toBe("quant algorithm");
     expect(r.leaderboard[3].role).toBe("liquidated at the 5% margin limit");
     expect(r.lambdaCalm).toBe(0.2);
@@ -89,7 +94,16 @@ describe("the shipped REAL (real.json)", () => {
 
   it("makes the scene's agent lookup fail loudly outside production", () => {
     expect(() => realAcs("Nobody-1")).toThrow(/no leaderboard row for "Nobody-1"/);
-    expect(realAcs("Gemini-2.5")).toBeCloseTo(0.883, 3);
+    expect(realAcs("Gemini-2.5")).toBeCloseTo(0.74, 3);
+  });
+});
+
+describe("the proof chapter's label", () => {
+  it("names the verify run that produced the hash, not the score table's run", () => {
+    const { precise } = COPY.c6;
+    expect(precise).toContain(`flash crash at tick ${REAL.proof.flashCrashAtTick}`);
+    expect(precise).toContain(`--seed ${REAL.seed} --ticks ${REAL.ticks}`);
+    expect(REAL.proof.startRegime).toBe("calm");
   });
 });
 

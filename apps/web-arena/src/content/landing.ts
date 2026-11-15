@@ -143,7 +143,7 @@ const c6 = {
   titleLines: ["Five runs.", "One market."],
   lede: "Start from the same seed and the whole market replays, down to the last bit. Any result can be re-run and checked by anyone.",
   precise:
-    "*SHA-256* of the full kernel state after 300 ticks, seed 42. Output of *apex-tui --verify-determinism*; gate: *./scripts/verify_determinism_hook.sh*. No floats, no hash maps, no wall clock.",
+    "*SHA-256* of the full kernel state after 300 ticks, seed 42: a calm market hit by a flash crash at tick 150 (a separate run from the score table). Output of *apex-tui --verify-determinism --seed 42 --ticks 300*; gate: *./scripts/verify_determinism_hook.sh*. No floats, no hash maps, no wall clock.",
   run: "run",
   match: "match",
   verdict: "/ 5 identical",

@@ -44,7 +44,7 @@ Unlike CSV backtests, ApexArena couples a Rust fixed-point L3 order book with an
 
 ## Evidence on Hand
 
-- Determinism: seed 42 → 5/5 identical SHA-256 (`4ee5fa37…` at 300 ticks via CLI; `0d8f0224…` in the test suite).
+- Determinism: seed 42 → 5/5 identical SHA-256 (`4ee5fa37…` from `apex-tui --verify-determinism --seed 42 --ticks 300`, a calm start with a flash crash injected at tick 150; the score table's `--scenario flash-crash` run is a different run and hashes to `00fc3c52…`; `0d8f0224…` in the test suite).
 - Test suites: Rust determinism suite (3 tests), Python SDK + MCP (4 tests).
 - Screenshots of the current app in `docs/screenshots/`.
 - Absent, must not be fabricated: users, customers, testimonials, live-trading results, performance comparisons against other benchmarks, press.

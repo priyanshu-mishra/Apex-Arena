@@ -278,32 +278,73 @@ pub fn compute_psr_zero_bps(returns_bps: &[i64], cumulative_pnl_bps: i64) -> i64
     normal_cdf_bps(z_scaled as i64)
 }
 
-/// Deterministic rational approximation of Standard Normal CDF $\Phi(z)$ where `z_milli = z * 1000`,
-/// returning probability in basis points `[0, 10000]`.
+/// Fixed-point scale for the normal CDF: `10^12` = 1.0. All intermediates fit in `i128`.
+const CDF_SCALE: i128 = 1_000_000_000_000;
+
+/// `exp(-x)` for `x >= 0` in `CDF_SCALE` fixed point, integer-only (deterministic on every platform).
+/// Splits `x = k + f` with `f` in `[0, 1)`: `exp(-x) = exp(-1)^k * exp(-f)`, where `exp(-f)` is a
+/// 24-term Taylor series (truncation error below `1 / 24!`).
+fn exp_neg_fixed(x: i128) -> i128 {
+    const EXP_NEG_ONE: i128 = 367_879_441_171; // e^-1 * 10^12
+    let x = x.max(0);
+    let k = x / CDF_SCALE;
+    let f = x - k * CDF_SCALE;
+
+    let mut term = CDF_SCALE;
+    let mut sum = CDF_SCALE;
+    for n in 1..=24i128 {
+        term = -(term * f) / (CDF_SCALE * n);
+        if term == 0 {
+            break;
+        }
+        sum += term;
+    }
+    for _ in 0..k {
+        sum = (sum * EXP_NEG_ONE) / CDF_SCALE;
+    }
+    sum.max(0)
+}
+
+/// Standard normal CDF $\Phi(z)$, where `z_milli = z * 1000`, returned in basis points `[0, 10000]`.
+///
+/// Abramowitz & Stegun 26.2.17 (absolute error below `7.5e-8`):
+/// $\Phi(z) = 1 - \varphi(z)(b_1 t + b_2 t^2 + b_3 t^3 + b_4 t^4 + b_5 t^5)$ for $z \ge 0$,
+/// with $t = 1 / (1 + p z)$, evaluated in `10^12` integer fixed point. Negative `z` uses
+/// $\Phi(-z) = 1 - \Phi(z)$, so the result is exactly symmetric in basis points.
 pub fn normal_cdf_bps(z_milli: i64) -> i64 {
-    let clamped = z_milli.clamp(-4_000, 4_000);
-    // Logistic-polynomial approximation accurate across [-4, 4]
-    let abs_z = clamped.abs() as i128;
-    // 1 / (1 + 0.2316419 * |z|)
-    let t_denom = 1_000_000 + 231 * abs_z;
-    let t = (1_000_000_000 / t_denom).clamp(0, 1_000_000); // scaled by 10^6
+    const P: i128 = 231_641_900_000; // 0.2316419
+    const B1: i128 = 319_381_530_000; // 0.319381530
+    const B2: i128 = -356_563_782_000; // -0.356563782
+    const B3: i128 = 1_781_477_937_000; // 1.781477937
+    const B4: i128 = -1_821_255_978_000; // -1.821255978
+    const B5: i128 = 1_330_274_429_000; // 1.330274429
+    const INV_SQRT_2PI: i128 = 398_942_280_401; // 1 / sqrt(2 * pi)
 
-    // Tail approximation
-    let z_sq = (abs_z * abs_z) / 1_000; // scaled by 1000
-    // exp(-z^2 / 2) via Padé 1 / (1 + x + x^2/2 + x^3/6) where x = z^2 / 2
-    let x = z_sq / 2; // scaled by 1000
-    let x2 = (x * x) / 1_000;
-    let x3 = (x2 * x) / 1_000;
-    let exp_denom = 1_000 + x + (x2 / 2) + (x3 / 6);
-    let pdf_scaled = (398_942 * 1_000) / exp_denom.max(1); // 0.398942 * 10^6
+    let clamped = z_milli.clamp(-8_000, 8_000);
+    let z = (clamped.unsigned_abs() as i128) * (CDF_SCALE / 1_000); // |z| in CDF_SCALE
 
-    let poly = (319 * t + 356 * ((t * t) / 1_000_000)) / 1_000;
-    let tail_bps = ((pdf_scaled * poly) / 100_000_000).clamp(0, 5_000) as i64;
+    // t = 1 / (1 + p|z|)
+    let t = (CDF_SCALE * CDF_SCALE) / (CDF_SCALE + (P * z) / CDF_SCALE);
+
+    // Horner: t * (b1 + t * (b2 + t * (b3 + t * (b4 + t * b5))))
+    let mut poly = B5;
+    for b in [B4, B3, B2, B1] {
+        poly = (poly * t) / CDF_SCALE + b;
+    }
+    poly = (poly * t) / CDF_SCALE;
+
+    // phi(z) = exp(-z^2 / 2) / sqrt(2 * pi)
+    let half_z_sq = ((z * z) / CDF_SCALE) / 2;
+    let pdf = (exp_neg_fixed(half_z_sq) * INV_SQRT_2PI) / CDF_SCALE;
+
+    // Upper tail 1 - Phi(|z|), rounded to the nearest basis point.
+    let tail = ((pdf * poly) / CDF_SCALE).clamp(0, CDF_SCALE / 2);
+    let tail_bps = ((tail * BPS_SCALE as i128 + CDF_SCALE / 2) / CDF_SCALE) as i64;
 
     if clamped >= 0 {
-        (10_000 - tail_bps).clamp(0, 10_000)
+        BPS_SCALE - tail_bps
     } else {
-        tail_bps.clamp(0, 10_000)
+        tail_bps
     }
 }
 
@@ -355,4 +396,53 @@ pub fn format_equity_dollars(equity_pips: i64) -> String {
         out.push(ch);
     }
     out
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn normal_cdf_matches_reference_values() {
+        // (z * 1000, Phi(z) in bps rounded) from standard tables.
+        let cases = [
+            (0, 5_000),
+            (250, 5_987),
+            (500, 6_915),
+            (1_000, 8_413),
+            (1_645, 9_500),
+            (1_960, 9_750),
+            (2_326, 9_900),
+            (3_000, 9_987),
+            (4_000, 10_000),
+        ];
+        for (z, expected) in cases {
+            assert_eq!(normal_cdf_bps(z), expected, "Phi({z}/1000)");
+            assert_eq!(normal_cdf_bps(-z), BPS_SCALE - expected, "Phi(-{z}/1000)");
+        }
+    }
+
+    #[test]
+    fn normal_cdf_is_monotonic_and_continuous() {
+        let mut prev = normal_cdf_bps(-8_000);
+        assert_eq!(prev, 0);
+        for z in -7_999..=8_000 {
+            let v = normal_cdf_bps(z);
+            assert!(v >= prev, "not monotonic at z_milli = {z}");
+            assert!(v - prev <= 5, "jump of {} bps at z_milli = {z}", v - prev);
+            prev = v;
+        }
+        assert_eq!(prev, BPS_SCALE);
+    }
+
+    #[test]
+    fn psr_is_graded_not_binary() {
+        // Same mean, rising noise: PSR must fall smoothly, not snap between 0 and 1.
+        let steady: Vec<i64> = (0..30).map(|i| 10 + (i % 3) - 1).collect();
+        let noisy: Vec<i64> = (0..30).map(|i| 10 + ((i * 37) % 61) - 30).collect();
+        let a = compute_psr_zero_bps(&steady, 300);
+        let b = compute_psr_zero_bps(&noisy, 300);
+        assert!(a > b, "steadier returns should score higher ({a} vs {b})");
+        assert!(b > 5_000 && b < 9_990, "noisy positive drift should be a graded probability, got {b}");
+    }
 }

@@ -70,10 +70,15 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
 
     if verify_only {
-        let (ok, hashes) = verify_multi_run_determinism(seed, ticks, 5, Some(ticks / 2));
+        let crash_at = ticks / 2;
+        let (ok, hashes) = verify_multi_run_determinism(seed, ticks, 5, Some(crash_at));
+        // The verify run always starts Calm and injects a flash crash halfway through; it ignores
+        // `--scenario`. Say so in the output so the hash is never attributed to another run.
         let payload = serde_json::json!({
             "seed": seed,
             "ticks": ticks,
+            "start_regime": "calm",
+            "flash_crash_at_tick": crash_at,
             "runs": 5,
             "all_equal": ok,
             "hashes": hashes,
