@@ -1,4 +1,5 @@
-/** Typed client for POST /api/arena (see src/app/api/arena/route.ts). */
+/** Typed client for POST /api/arena (see src/app/api/arena/route.ts), with a WebAssembly path for the Rust actions. */
+import { isWasmAction, runRustWasm, WasmInputError } from "../../lib/rustWasm";
 
 export const RUST_SCENARIOS = [
   { id: "calm", label: "Calm" },
@@ -45,6 +46,8 @@ export type ApiResult<T> = ApiOk<T> | ApiErr;
 export interface DeterminismResponse {
   ok: true;
   engine: string;
+  engineLabel?: string;
+  note?: string;
   command?: string;
   exitCode?: number | null;
   execMs?: number;
@@ -96,6 +99,8 @@ export interface RustSnapshot {
 export interface SnapshotResponse {
   ok: true;
   engine: string;
+  engineLabel?: string;
+  note?: string;
   command?: string;
   scenario: string;
   seed: number;
@@ -119,17 +124,44 @@ export interface McpResponse {
 }
 
 export const SCALE = 1e8;
+export const WASM_FIX_HINT = "Build the WebAssembly kernel with `./scripts/build-wasm.sh` (needs rustup's wasm32-unknown-unknown target and wasm-bindgen-cli).";
 export const pipsToUnit = (p: number) => p / SCALE;
 
+/** Runs a Rust action in the browser (WebAssembly build of the same kernel). */
+async function postWasm<T>(body: Record<string, unknown>, note?: string): Promise<ApiResult<T>> {
+  const t0 = performance.now();
+  try {
+    const data = await runRustWasm(body);
+    if (note) data.note = note;
+    return { ok: true, ms: Math.round(performance.now() - t0), data: data as T };
+  } catch (err) {
+    const ms = Math.round(performance.now() - t0);
+    const msg = err instanceof Error ? err.message : String(err);
+    if (err instanceof WasmInputError) return { ok: false, ms, status: 400, error: msg };
+    return { ok: false, ms, error: `The Rust WebAssembly kernel could not run: ${msg}`, hint: WASM_FIX_HINT };
+  }
+}
+
 export async function postArena<T>(body: Record<string, unknown>): Promise<ApiResult<T>> {
+  const wasmAction = isWasmAction(body.action);
   if (process.env.NEXT_PUBLIC_STATIC_DEMO === "true") {
+    if (wasmAction) return postWasm<T>(body);
     return {
       ok: false,
       ms: 0,
-      error: "Native Rust/Python verification is unavailable in the GitHub Pages demo.",
-      hint: "Run the project locally with `cargo build -p apex-tui` and `cd apps/web-arena && bun run dev`. The browser simulation and browser determinism check work in this demo.",
+      error: "The Python MCP server needs the local server and is unavailable in the GitHub Pages demo.",
+      hint: "Run the project locally with `cd apps/web-arena && bun run dev` to call the Python MCP tools. The Rust checks (WebAssembly), the browser simulation and the browser determinism check work in this demo.",
     };
   }
+  const server = await postServer<T>(body);
+  if (server.ok || !wasmAction) return server;
+  // No server route or no compiled binary: the same Rust kernel still runs in the browser.
+  if (server.status !== undefined && server.status !== 404 && server.status !== 500 && server.status !== 502 && server.status !== 503) return server;
+  const fallback = await postWasm<T>(body, `The native binary was unavailable (${server.error}). This result comes from the same Rust kernel compiled to WebAssembly, running in your browser.`);
+  return fallback.ok ? { ...fallback, ms: fallback.ms + server.ms } : server;
+}
+
+async function postServer<T>(body: Record<string, unknown>): Promise<ApiResult<T>> {
   const t0 = performance.now();
   try {
     const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_PATH || ""}/api/arena`, {

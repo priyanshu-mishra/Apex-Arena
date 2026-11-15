@@ -1,7 +1,6 @@
 # Rust / Cargo
 /target/
 **/*.rs.bk
-Cargo.lock
 
 # Python / PyO3 / Maturin
 __pycache__/
@@ -30,6 +29,8 @@ graphify-out/
 .remember/
 apps/web-arena/.next-build/
 apps/web-arena/.next-pages/
+# WebAssembly build output (scripts/build-wasm.sh; rebuilt by CI)
+apps/web-arena/public/wasm/
 apps/web-arena/test-results/
 apps/web-arena/playwright-report/
 .playwright-mcp/

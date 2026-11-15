@@ -39,6 +39,10 @@ type Call<T> = { state: "idle" } | { state: "loading"; startedAt: number } | { s
 
 const TICKS_MAX = 20_000;
 
+const isWasm = (engine?: string) => engine === "rust-wasm";
+/** Which Rust engine produced a result: the browser WebAssembly build or the server's native binary. */
+const engineName = (engine?: string) => (isWasm(engine) ? "Rust kernel compiled to WebAssembly, running in your browser" : "Native Rust binary on the server");
+
 /* ---------------------------------------------------------------- helpers */
 
 function useElapsed(startedAt: number | null): number {
@@ -245,7 +249,7 @@ export function VerificationConsole() {
   }, [determinism, log]);
 
   const tabs: { id: TabId; label: ReactNode }[] = [
-    { id: "snapshot", label: "Native Rust snapshot" },
+    { id: "snapshot", label: "Rust snapshot" },
     { id: "mcp", label: "Python MCP tool call" },
     { id: "browser", label: "In-browser kernel" },
   ];
@@ -261,11 +265,11 @@ export function VerificationConsole() {
         title="Rust 5-run check"
         subtitle={`Five fresh Rust kernels, seed ${seed}, ${ticks.toLocaleString("en-US")} ticks, a flash crash at tick ${Math.floor(ticks / 2).toLocaleString("en-US")}, then a SHA-256 of the full state`}
         explain={{
-          what: "The proof that ApexArena is reproducible. Five independent Rust kernels are run from the same seed and their full-state SHA-256 hashes compared. If all five match, the market replays bit for bit.",
+          what: "The proof that ApexArena is reproducible. Five independent Rust kernels are run from the same seed and their full-state SHA-256 hashes compared. If all five match, the market replays bit for bit. On the hosted demo the kernel is the same Rust code compiled to WebAssembly and run in your browser; locally it is the native binary.",
           how: pro
             ? "Set a seed and tick count, then run. The call is timed and logged in the console below. If something fails, the error says exactly what to fix."
-            : "Press the button. The compiled Rust binary runs on this machine and the five hashes appear in the rows. Switch to Pro to change the seed and tick count.",
-          math: "The server spawns target/debug/apex-tui --verify-determinism with validated arguments (seed 0–4,294,967,295, ticks 1–20,000) and returns its JSON unchanged. The kernel uses no floats, no hash maps and no wall clock.",
+            : "Press the button. The Rust kernel runs (as WebAssembly in your browser on the hosted demo, as the native binary when run locally) and the five hashes appear in the rows. Switch to Pro to change the seed and tick count.",
+          math: "Locally the server spawns target/debug/apex-tui --verify-determinism; on the hosted demo the browser calls apex_wasm.verify_determinism, the same crate built for wasm32. Both validate seed 0–4,294,967,295 and ticks 1–20,000 and return the same JSON. The kernel uses no floats, no hash maps and no wall clock.",
         }}
       >
         <div className="flex flex-col gap-5">
@@ -309,9 +313,9 @@ export function VerificationConsole() {
           {rust.state === "idle" ? <p className={caption}>No run yet. Expect five identical 64-character hashes in well under a second.</p> : null}
           {rustData ? (
             <p className={cn(caption)}>
-              Seed <span className={num}>{rustData.seed}</span>, <span className={num}>{rustData.ticks}</span> ticks. Engine time{" "}
+              <strong className="font-semibold text-bone">{engineName(rustData.engine)}.</strong> Seed <span className={num}>{rustData.seed}</span>, <span className={num}>{rustData.ticks}</span> ticks. Engine time{" "}
               <span className={num}>{rustData.execMs ?? "—"} ms</span>, round trip{" "}
-              <span className={num}>{rust.state === "done" ? rust.result.ms : "—"} ms</span>.
+              <span className={num}>{rust.state === "done" ? rust.result.ms : "—"} ms</span>.{rustData.note ? <> {rustData.note}</> : null}
             </p>
           ) : null}
           {pro && rustData ? (
@@ -326,11 +330,11 @@ export function VerificationConsole() {
       {pro ? (
         <Panel
           title="Verification console"
-          subtitle="Every button runs real code: the compiled Rust binary, the Python MCP server, or the in-browser kernel"
+          subtitle="Every button runs real code: the Rust kernel (native binary or WebAssembly), the Python MCP server, or the in-browser JavaScript kernel"
           explain={{
-            what: "Snapshots and MCP calls show the exact bytes agents see; the in-browser check runs the JavaScript port five times.",
+            what: "Snapshots and MCP calls show the exact bytes agents see; the in-browser check runs the JavaScript port five times. Rust snapshots run as WebAssembly in your browser on the hosted demo; MCP calls need the local Python server.",
             how: "Choose a check and run it with the seed and tick count above. Each call is timed and logged below.",
-            math: "The server spawns target/debug/apex-tui or python3 with validated arguments (allow-listed scenarios and tools) and returns its JSON unchanged.",
+            math: "Locally the server spawns target/debug/apex-tui or python3 with validated arguments (allow-listed scenarios and tools) and returns its JSON unchanged. Rust snapshots fall back to apex_wasm in the browser when no server binary is available.",
           }}
           flush
         >
@@ -351,11 +355,11 @@ export function VerificationConsole() {
                     </select>
                   </label>
                   <RunButton loading={snap.state === "loading"} startedAt={snap.state === "loading" ? snap.startedAt : null} onClick={runSnap}>
-                    Run native snapshot
+                    Run Rust snapshot
                   </RunButton>
                 </div>
                 {snap.state === "done" ? snap.result.ok ? <SnapshotView res={snap.result.data} ms={snap.result.ms} /> : <ErrorBox err={snap.result} /> : snap.state === "idle" ? (
-                  <p className={cn(empty, "px-0")}>Runs the kernel headless and prints its TickTelemetry as JSON. The regime may switch during the run — the Markov chain is live.</p>
+                  <p className={cn(empty, "px-0")}>Runs the Rust kernel headless (WebAssembly in your browser on the hosted demo, the native binary locally) and prints its TickTelemetry as JSON. The regime may switch during the run — the Markov chain is live.</p>
                 ) : null}
               </div>
             ) : null}
@@ -509,8 +513,8 @@ function SnapshotView({ res, ms }: { res: SnapshotResponse; ms: number }) {
       <div className="flex flex-wrap items-center gap-2">
         <Badge tone={sn.regime === "FlashCrash" ? "ask" : sn.regime === "Calm" ? "bid" : "chaos"}>{sn.regime}</Badge>
         <span className={caption}>
-          Started as {res.scenario}, seed <span className={num}>{res.seed}</span>. Engine <span className={num}>{res.execMs ?? "—"} ms</span>, round trip{" "}
-          <span className={num}>{ms} ms</span>.
+          <strong className="font-semibold text-bone">{engineName(res.engine)}.</strong> Started as {res.scenario}, seed <span className={num}>{res.seed}</span>. Engine{" "}
+          <span className={num}>{res.execMs ?? "—"} ms</span>, round trip <span className={num}>{ms} ms</span>.{res.note ? <> {res.note}</> : null}
         </span>
       </div>
       <div className="grid grid-cols-2 gap-x-4 gap-y-3 sm:grid-cols-3 lg:grid-cols-5">

@@ -160,7 +160,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         <aside data-chrome aria-label="Demo limitations" className="border-b border-rule bg-ink-2 print:hidden">
           <p className="mx-auto max-w-[1720px] px-[clamp(16px,3.9vw,56px)] py-2.5 font-sans text-[13px] leading-[1.5] text-bone-2">
             <strong className="font-semibold text-bone">Browser demo.</strong> Trading, agents and benchmarks run in your
-            browser. Native Rust/Python proof tools require the local app.
+            browser. The Rust proof checks run as WebAssembly; the Python MCP tools require the local app.
           </p>
         </aside>
       ) : null}

@@ -1,0 +1,18 @@
+[package]
+name = "apex-wasm"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+apex-types = { path = "../apex-types" }
+apex-kernel = { path = "../apex-kernel" }
+serde_json.workspace = true
+wasm-bindgen = "0.2"
+
+# revm (via rand/alloy) pulls getrandom 0.2, which needs the `js` backend on wasm32-unknown-unknown.
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+getrandom = { version = "0.2", features = ["js"] }

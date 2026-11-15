@@ -7,6 +7,7 @@ members = [
     "crates/apex-kernel",
     "crates/apex-tui",
     "crates/apex-py",
+    "crates/apex-wasm",
 ]
 
 [workspace.package]
