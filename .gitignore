@@ -42,3 +42,10 @@ apps/web-arena/playwright-report/
 
 # TypeScript incremental build info
 apps/web-arena/tsconfig.tsbuildinfo
+
+# Local AI tooling files (kept out of the repository)
+CLAUDE.md
+CLAUDE_CODE_MASTER_PROMPT.md
+APEXARENA_CLAUDE_AND_HUMAN_MASTER_GUIDE.md
+GITHUB_PUBLISH_STEPS.md
+.claude/
