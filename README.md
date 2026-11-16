@@ -7,7 +7,7 @@
 ### A live, reproducible market where AI trading agents are tested by the market itself — not by a replayed spreadsheet.
 
 [![Rust](https://img.shields.io/badge/engine-Rust%20fixed--point-B7410E?logo=rust&logoColor=white)](crates/)
-[![revm](https://img.shields.io/badge/on--chain-revm%2019.4%20AMM-38BDF8)](crates/apex-evm/src/lib.rs)
+[![revm](https://img.shields.io/badge/on--chain-revm%2019.7%20AMM-38BDF8)](crates/apex-evm/src/lib.rs)
 [![Python](https://img.shields.io/badge/SDK-Python%20%2B%20MCP-3776AB?logo=python&logoColor=white)](sdks/python/)
 [![Next.js](https://img.shields.io/badge/web-Next.js%2015-000000?logo=nextdotjs&logoColor=white)](apps/web-arena/)
 [![Determinism](https://img.shields.io/badge/determinism-5%2F5%20identical%20SHA--256-10B981)](scripts/verify_determinism_hook.sh)
@@ -68,7 +68,7 @@ flowchart LR
     subgraph CORE["🦀 Rust core — deterministic, fixed-point"]
         T["apex-types<br/>FixedPrice / FixedQty<br/>SCALE = 10^8"]
         C["apex-clob<br/>L3 order book<br/>FIFO · Cancel-Newest STP"]
-        E["apex-evm<br/>revm 19.4 pool<br/>x·y=k · 30 bps fee"]
+        E["apex-evm<br/>revm 19.7 pool<br/>x·y=k · 30 bps fee"]
         K["apex-kernel<br/>Markov-Hawkes chaos · ABIDES agents<br/>ACS scoring · SHA-256 state"]
         T --> C & E
         C & E --> K
@@ -150,7 +150,7 @@ The web app (`apps/web-arena`) is the friendliest way in. It opens on a landing 
 | `/app` | <img src="docs/screenshots/arena.png" alt="Arena page"/> **1 · Arena** — order book, candle chart of the order book against the revm pool, order ticket and leaderboard; Pro adds the readout strip, equity / drawdown / Hawkes λ(t) charts, AMM swaps, one-click arbitrage and the stress lab. |
 | `/app/agents` | <img src="docs/screenshots/agent-lab.png" alt="Agents page"/> **2 · Agents** — LLM reasoning traces with the tool calls they sent, and a custom-agent builder; Pro adds the exact `MacroDigest` JSON, the 1-second barrier and a head-to-head. |
 | `/app/benchmark` | <img src="docs/screenshots/benchmark.png" alt="Benchmark page"/> **3 · Benchmark** — a four-stage stress tournament on one deterministic kernel, scored on the Apex Composite Score, with JSON and printable reports. |
-| `/app/proof` | <img src="docs/screenshots/determinism-proof.png" alt="Proof page"/> **4 · Proof** — runs the real Rust binary from your browser: five runs, five identical SHA-256 hashes. Pro adds the verification console, the clickable system diagram (<img src="docs/screenshots/architecture.png" alt="Architecture diagram" width="30%"/>), the AMM-vs-CLOB arbitrage simulator and the ACS calculator. |
+| `/app/proof` | <img src="docs/screenshots/determinism-proof.png" alt="Proof page"/> **4 · Proof** — runs the real Rust kernel: five runs, five identical SHA-256 hashes. Locally it calls the native binary; on GitHub Pages the same kernel runs as WebAssembly in your browser and produces the same hash. Pro adds the verification console, the clickable system diagram (<img src="docs/screenshots/architecture.png" alt="Architecture diagram" width="30%"/>), the AMM-vs-CLOB arbitrage simulator and the ACS calculator. |
 
 > A live **narrative line** translates raw telemetry into a sentence ("Whale dump hit the Revm pool…"), and the header's horizon light warms with the current regime, so a first-time visitor always knows what the market is doing.
 
@@ -206,14 +206,17 @@ Then visit **http://localhost:3000** (landing), **/enter** (gate) or **/app** (w
 
 The Pages build includes the landing (`/`), the gate (`/enter`) and the
 workstation under `/app/*` (`/app`, `/app/agents`, `/app/benchmark`,
-`/app/proof`): browser trading, custom agents, benchmarks and the browser
-determinism check (FNV-1a). Native Rust SHA-256 proofs and the
-Python MCP bridge require the local Next.js server; they are not available on Pages.
+`/app/proof`): browser trading, custom agents and benchmarks. The Proof page's
+Rust checks (the 5-run SHA-256 verification and the Rust snapshot) run the real kernel
+compiled to WebAssembly (`crates/apex-wasm`) in a Web Worker, and match the native
+binary byte for byte (`scripts/check-wasm.mjs`). Only the Python MCP bridge needs the
+local Next.js server and is not available on Pages.
 Pages uses the existing ArrayBuffer fallback because it cannot set the isolation
 headers needed for SharedArrayBuffer.
 
 Pages is set to **GitHub Actions** as the source; every push to `main` that touches
-`apps/web-arena` runs `.github/workflows/pages.yml`, which builds and deploys the demo. Private repositories require a GitHub plan supporting
+`apps/web-arena`, the Rust crates, `Cargo.toml`/`Cargo.lock` or `scripts/build-wasm.sh` runs
+`.github/workflows/pages.yml`, which builds the WebAssembly kernel, then builds and deploys the demo. Private repositories require a GitHub plan supporting
 Pages for private repositories. A Pages site may be public even if its source is private.
 
 To build the same static demo locally from `apps/web-arena`:
@@ -269,7 +272,7 @@ The SDK also exposes `ArenaEngine`, `ApexAgent`, `HybridLLMMarketMaker` and `run
 | **Virtual time only** — `virtual_ts_ns`, never the wall clock | No latency leaks between fast and slow agents | `crates/apex-kernel` |
 | **Monotonic chart time** | `lightweight-charts` rejects duplicate or backwards timestamps | `apps/web-arena/src/lib/arena.tsx` |
 
-> The browser workstation runs a lightweight JavaScript port of the kernel for interactivity; its in-browser check uses its own 256-bit FNV-1a digest. The authoritative SHA-256 proof always comes from the native Rust binary.
+> The browser workstation runs a lightweight JavaScript port of the kernel for interactivity; its live simulation uses its own 256-bit FNV-1a digest. The authoritative SHA-256 proof always comes from the Rust kernel, either the native binary or the same code compiled to WebAssembly on the Proof page.
 
 ---
 
@@ -280,13 +283,14 @@ Apex-Arena/
 ├── crates/
 │   ├── apex-types/     FixedPrice, FixedQty, orders, fills, regimes
 │   ├── apex-clob/      deterministic L3 order book (price-time FIFO, STP)
-│   ├── apex-evm/       revm constant-product pool + optimal arbitrage
+│   ├── apex-evm/       x·y=k constant-product pool (30 bps fee) with revm state
 │   ├── apex-kernel/    ArenaKernel, Markov-Hawkes chaos, ABIDES agents, ACS, SHA-256
 │   ├── apex-tui/       Ratatui terminal UI, --json and --verify-determinism CLI
-│   └── apex-py/        PyO3 bindings (_core)
+│   ├── apex-py/        PyO3 bindings (_core)
+│   └── apex-wasm/      wasm-bindgen build of the kernel for the browser Proof page
 ├── sdks/python/apex_arena/   Python SDK, agents, CLI, MCP JSON-RPC server
 ├── apps/web-arena/           Next.js 15 web app (landing, gate, 4-page workstation, WebWorker sim, API bridge)
-├── scripts/                  determinism gate
+├── scripts/                  determinism gate, WebAssembly build and native-vs-WASM parity check
 └── docs/screenshots/         images used in this README
 ```
 
